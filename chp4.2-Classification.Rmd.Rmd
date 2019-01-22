@@ -1,0 +1,378 @@
+---
+title: "chp4.2-Classification"
+author: "Prakash Paudyal"
+output:
+  word_document: default
+  pdf_document: default
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+Answer all questions specified on the problem but if you see something interesting and want to do more analysis please report it as well. Don't forget to include discussion.
+
+Submit your \textbf{.rmd} file with the knitted \textbf{PDF} (or knitted Word Document saved as a PDF). If you are still having trouble with .rmd, let us know and we will help you, but both the .rmd and the PDF are required.
+
+This file can be used as a skeleton document for your code/write up. Please follow the instructions found under Content titled Format+STAT-702+HW. 
+
+For any question asking for plots/graphs, please do as the question asks as well as do the same but using the respective commands in the GGPLOT2 library. (So if the question asks for one plot, your results should have two plots. One produced using the given R-function and one produced from the GGPLOT2 equivalent)
+
+You do not need to include the above statements.
+
+Please do the following problems from the text book ISLR.
+
+$$1. Question 4.7.3\ pg\ 168$$
+3. This problem relates to the QDA model, in which the observations within each class are drawn from a normal distribution with a classspecific mean vector and a class specific covariance matrix. We consider the simple case where p = 1; i.e. there is only one feature.Suppose that we have K classes, and that if an observation belongs to the kth class then X comes from a one-dimensional normal distribution,X ??? N(??k, ??2k). Recall that the density function for the one-dimensional normal distribution is given in (4.11). Prove that in this case, the Bayes' classifier is not linear. Argue that it is in fact quadratic.
+Hint: For this problem, you should follow the arguments laid out in Section 4.4.2, but without making the assumption that ??2 1 = . . . = ??2K.
+
+**ANS**
+From the Bayes'theorem Equation (4.10) and Gaussian function in equation(4.11) 
+if $\sigma$ varies from 1 to $k$ then  we can get equation (4.12) by substituting Gaussian function equation (4.11) in equation (4.10)
+  $p_k(x) = \frac {\pi_k
+                \frac {1} {\sqrt{2 \pi} \sigma_k}
+                \exp(- \frac {1} {2 \sigma_k^2} (x - \mu_k)^2)
+               }
+               {\sum {
+                \pi_l
+                \frac {1} {\sqrt{2 \pi} \sigma_l}
+                \exp(- \frac {1} {2 \sigma_l^2} (x - \mu_l)^2)
+               }}$
+
+Taking the log both side above equation becomes 
+$\log(p_k(x)) = \frac {\log(\pi_k) +
+                \log(\frac {1} {\sqrt{2 \pi} \sigma_k}) + 
+                - \frac {1} {2 \sigma_k^2} (x - \mu_k)^2
+               }
+               {\log(\sum {
+                \pi_l
+                \frac {1} {\sqrt{2 \pi} \sigma_l}
+                \exp(- \frac {1} {2 \sigma_l^2} (x - \mu_l)^2)
+               })}$
+
+
+$\log(p_k(x)) 
+\log(\sum {
+     \pi_l
+     \frac {1} {\sqrt{2 \pi} \sigma_l}
+     \exp(- \frac {1} {2 \sigma_l^2} (x - \mu_l)^2)
+    })
+= \log(\pi_k) +
+  \log(\frac {1} {\sqrt{2 \pi} \sigma_k}) + 
+  - \frac {1} {2 \sigma_k^2} (x - \mu_k)^2$ 
+
+This is equvalent to 
+$\delta(x)
+= \log(\pi_k) +
+  \log(\frac {1} {\sqrt{2 \pi} \sigma_k}) + 
+  - \frac {1} {2 \sigma_k^2} (x - \mu_k)^2$
+  
+  As we can see this expression is quadratic function of x. Hence Bayes'classifier in above case  is not linear.
+  
+
+$$2. Question 4.7.5 pg 169$$
+ 5. We now examine the differences between LDA and QDA.
+(a) If the Bayes decision boundary is linear, do we expect LDA or QDA to perform better on the training set? 
+On the test set?
+**Ans** If the Bayes decision boundary is linear,QDA will perform better than LDA on training set beceuse QDA is more felexibile model and give closer fit.
+In test set LDA wil perform better because it avoids overfitting of test data.
+
+(b) If the Bayes decision boundary is non-linear, do we expect LDA or QDA to perform better on the training set?
+ On the test set?
+**Ans** For non linear Bayes decision boundary, QDA will perform better.
+
+(c) In general, as the sample size n increases, do we expect the test prediction accuracy of QDA relative to LDA to improve, decline, or be unchanged? Why?
+
+**Ans**
+If data size is large, test prediction accuracy of QDA wil improve, because as the sample size increase the more flexibile method will fit better as the variance is offset by the larger smaple size.
+
+(d) True or False: Even if the Bayes decision boundary for a given problem is linear, we will probably achieve a superior test error rate using QDA rather than LDA because QDA is flexible enough to model a linear decision boundary. Justify your answer.
+**Ans**
+False, because QDA will overfit and gives higher test error rate than LDA.
+
+```{r,include=FALSE,warning=F,message=F}
+#insert code here!
+```
+
+$$3. Continue from Homework \#3 Question 4.7.10(e-i) pg 171$$
+10. This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter's lab, except that it contains 1,089 weekly returns for
+21 years, from the beginning of 1990 to the end of 2010.
+
+```{r,include=FALSE,warning=F,message=F}
+library(ISLR)
+data(Weekly)
+head(Weekly)
+
+
+```
+
+(e) Repeat (d) using LDA.
+
+LDA FIT and confusion matrix
+
+```{r,warning=T,message=FALSE}
+library(MASS)
+attach(Weekly)
+train <-(Year < 2009)
+Weekly.test = Weekly[!train, ]
+Direction.test = Direction[!train]
+lda.fit = lda(Direction ~ Lag2, data = Weekly, subset = train)
+lda.fit
+lda.pred = predict(lda.fit, Weekly.test)
+table(lda.pred$class, Direction.test)
+
+
+
+```
+
+
+fraction of correct predictions
+
+```{r}
+mean(lda.pred$class == Direction.test)
+
+```
+
+(f) Repeat (d) using QDA.
+
+QDA FIT and confusion matrix
+
+```{r}
+qda.fit = qda(Direction ~ Lag2, data = Weekly, subset = train)
+qda.fit
+qda.pred = predict(qda.fit, Weekly.test)
+table(qda.pred$class, Direction.test)
+
+```
+
+fraction of correct predictions
+```{r}
+mean(qda.pred$class == Direction.test)
+
+```
+
+(g) Repeat (d) using KNN with K = 1.
+
+KNN FIT and confusion matrix
+
+```{r}
+library(class)
+train.X = as.matrix(Lag2[train])
+test.X = as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 1)
+table(knn.pred, Direction.test)
+
+```
+
+fraction of correct predictions
+
+```{r}
+mean(knn.pred == Direction.test)
+
+```
+
+(h) Which of these methods appears to provide the best results on
+this data?
+
+**ANS** Logistic regression and LDA are the best models which provide the 62.5% accuracy of predection.
+
+(i) Experiment with different combinations of predictors, including possible transformations and interactions,
+for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide 
+the best results on the held out data. Note that you should also experiment with values for
+K in the KNN classifier.
+
+#Logistic regression with Lag2+Lag4+Lag5:Lag4 
+
+```{r}
+glm.fit = glm(Direction ~ Lag2+Lag4+Lag5:Lag4, data = Weekly, family = binomial, subset = train)
+glm.probs = predict(glm.fit, Weekly.test, type = "response")
+glm.pred <- ifelse(glm.probs > .50, "Up", "Down") 
+table(glm.pred, Direction.test)
+```
+
+fraction of correct predictions
+
+```{r}
+mean(glm.pred == Direction.test)
+
+```
+
+# LDA with Lag2 interaction with Lag1
+
+```{r}
+lda.fit = lda(Direction ~ Lag2:Lag1, data = Weekly, subset = train)
+lda.pred = predict(lda.fit, Weekly.test)
+table(lda.pred$class, Direction.test)
+
+```
+
+fraction of correct predictions
+
+```{r}
+mean(lda.pred$class == Direction.test)
+
+```
+
+# QDA with sqrt(abs(Lag2))
+
+```{r}
+
+qda.fit = qda(Direction ~ Lag2 + sqrt(abs(Lag2)), data = Weekly, subset = train)
+qda.class = predict(qda.fit, Weekly.test)$class
+table(qda.class, Direction.test)
+```
+
+fraction of correct predictions
+
+```{r}
+mean(qda.class == Direction.test)
+
+```
+# KNN k =4
+
+```{r}
+knn.pred = knn(train.X, test.X, train.Direction, k = 4)
+table(knn.pred, Direction.test)
+```
+fraction of correct predictions
+
+```{r}
+mean(knn.pred == Direction.test)
+
+```
+# KNN k = 15
+
+```{r}
+knn.pred = knn(train.X, test.X, train.Direction, k = 15)
+table(knn.pred, Direction.test)
+```
+
+fraction of correct predictions
+
+```{r}
+mean(knn.pred == Direction.test)
+
+```
+
+$$4. Continue from Homework \#3 Question 4.7.11(d,e,g) pg 172 $$
+11.In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.
+
+```{r,include=FALSE}
+library(MASS)
+data(Auto)
+head(Auto)
+med <- median(Auto$mpg)
+mpg01 <-ifelse(Auto$mpg > med, 1,0)
+auto<-data.frame(Auto,mpg01)
+auto$mpg01<-factor(auto$mpg01)
+```
+
+#Split the data into a training set and a test set.
+
+```{r}
+#data(auto)
+
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(auto))
+
+## set the seed to make your partition reproductible
+set.seed(120)
+train_ind <- sample(seq_len(nrow(auto)), size = smp_size)
+
+train1 <- auto[train_ind, ]
+test1 <- auto[-train_ind, ]
+```
+
+
+
+(d) Perform LDA on the training data in order to predict mpg01 using the variables that seemed most associated
+with mpg01 in(b). What is the test error of the model obtained?
+
+```{r}
+library(MASS)
+lda.fit1 <- lda(mpg01 ~ displacement+horsepower+weight+year, data=train1)
+lda.fit1
+pred.lda <- predict(lda.fit1, test1)
+table(Predected=pred.lda$class, Actual=test1$mpg01)
+```
+test error 
+
+```{r}
+mean(pred.lda$class != test1$mpg01)
+
+```
+
+(e) Perform QDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+```{r}
+library(MASS)
+qda.fit1 <- qda(mpg01 ~ displacement+horsepower+weight+year, data=train1)
+qda.fit1
+pred.qda <- predict(qda.fit1, test1)
+table(Predected=pred.qda$class, Actual=test1$mpg01)
+```
+test error 
+```{r}
+mean(pred.qda$class != test1$mpg01)
+
+```
+(f) Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+```{r,include=T,warning=F,message=F}
+glm.fit2 <- glm(mpg01 ~ displacement+horsepower+weight+year, data=train1, family="binomial")
+ prob2 <- predict(glm.fit2, test1, type = "response")
+# Turn probabilities into classes and look at their frequencies
+ p_class2 <- ifelse(prob2 > .50, "1", "0") 
+ table(p_class2, test1$mpg01)
+ #confusionMatrix(p_class2, test[["mpg01"]])
+ #round(sum(p_class2!=test$mpg01)/nrow(test)*100,2)
+ mean(p_class2 != test1$mpg01)
+ #summary(glm.fit2)
+```
+
+(g) Perform KNN on the training data, with several values of K, in order to predict mpg01. Use only the variables that seemed most associated with mpg01 in (b). What test errors do you obtain?Which value of K seems to perform 
+the best on this data set?
+
+```{r,include=TRUE,warning=F,message=FALSE}
+library(class)
+attach(auto)
+train.X1 = cbind(displacement, horsepower , weight , year)[ train_ind, ]
+test.X1 = cbind(displacement ,horsepower , weight , year)[ -train_ind, ]
+train.mpg01 = mpg01[train_ind]
+set.seed(1)
+# KNN(k=1)
+#knn.pred1 = knn(train.X1, test.X1, train.mpg01, k = 1)
+#mean(knn.pred1 !=test1$mpg01)
+```
+
+
+I used function to calculate missclassification error for different values of k.Test error gicen below. At k=43
+it gaves minimum error value 0.09183673.
+
+```{r}
+#Function for choosing k in knn
+misclassknn <- function(train, test, 
+                        response.train, response.test, Kmax){ 
+  K <- 1:Kmax
+  misclass <- numeric(Kmax)
+  for( k in K){
+    knn.pred <- knn(train,test,response.train, k=k)
+    misclass[k] <- mean(knn.pred!=response.test)
+  }
+  #plot(c(1,Kmax), c(0.4,0.6), type = "n" )
+  #points(1:Kmax, misclass, type = "b", pch =16)
+  return(list(K = Kmax, misclass = misclass, 
+              Kmin = which.min(misclass)))
+}
+
+misclassknn(train.X1, test.X1, train.mpg01, test1$mpg01, 100)
+```
+
+5.  Read the paper "Statistical Classification Methods in Consumer Credit Scoring: A Review" posted on D2L. Write a one page (no more, no less) summary.
+
+6. Explore this [website](https://archive.ics.uci.edu/ml/datasets.html) that contains open datasets that are used in machine learning. Find one dataset with a classification problem and write a description of the dataset and problem. I don't expect you to do the analysis for this homework, but feel free to if you want!

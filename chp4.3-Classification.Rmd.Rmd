@@ -1,0 +1,465 @@
+---
+title: "chp4.3-Classification"
+author: "Prakash Paudyal"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+Please do the following problems from the text book ISLR.
+
+$$1. Question 4.7.6\ pg\ 170$$
+ 6. Suppose we collect data for a group of students in a statistics class with variables X1 =hours studied, X2 =undergrad GPA, and Y =receive an A. We fit a logistic regression and produce estimated coefficient,  $\hat{\beta}_0 = ???6$, $\hat{\beta}_1 = 0.05$, $\hat{\beta}_2 = 1$..(a) Estimate the probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class. (b) How many hours would the student in part (a) need to study to have a 50% chance of getting an A in the class?
+
+**In logistic regression, Estimited coefficents are given hence we substitute the values of coefficent in the logistic function to calculate the probability**
+
+\par$x_{1}$= Hours scheduled
+
+$x_2$= Undergrad GPA
+
+$Y$= receive on A
+
+**logistic regression, given estimated parameters**
+
+$\hat{\beta_{0}}$=-6
+
+$\hat{\beta_{0}}$=-0.05
+
+$\hat{\beta_{0}}$=-1,
+$ X_1$ = 40 hours
+$x_2$ =3.5 GPA
+\newline
+\newline
+
+
+**a)**
+**We can use this equation and Substitute the values of coefficents and predictors to calculate  Probability**
+
+
+\[
+    \hat{p}(x)=\frac{e^{\hat{\beta_{0}}+\hat{\beta_{1}}x_1+\hat{\beta_{2}x_2}}}{1+e^{\hat{\beta_{0}}+\hat{\beta_{1}}x_1+\hat{\beta_{2}x_2}}}
+\]
+
+By substituting the given values on above equation, we get,
+
+\[
+    \hat{p}(x)=\frac{e^{-6+0.05*40+1*3.5}}{1+e^{-6+0.05*40+1*3.5}} = 0.3775
+\]
+
+**Hence probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class is 37.75%**
+
+**b**
+\newline
+**Here we are given probability $\hat{p}(x)$=0.5 and $x_2$=3.5 GPA , need to find tha numbers of hours,Substituing this values in above                logistic function,**
+
+
+\[
+    \frac{1}{2}=\frac{e^{-6+0.05*x_1+1*3.5}}{1+e^{-6+0.05*x_1+1*3.5}}
+\]
+
+or, \[ 
+1+e^{-6+0.05*x_1+1*3.5}=2e^{-6+0.05*x_1+1*3.5}
+\]
+
+or,\[
+1=e^{-6+0.05*x_1+1*3.5}
+\]
+
+Taking natural log(ln) on both sides
+
+or,\[
+0=-6+0.05*x_1+1*3.5
+\]
+or,
+\[
+x_1=\frac{(6-3.5)}{0.05}=50 Hours
+\]
+
+Hence, Student need  to study 50hrs to have a 50% chance of getting A in the class.
+
+
+$$2. Question 4.7.7 pg 170$$
+7. Suppose that we wish to predict whether a given stock will issue a dividend this year ("Yes" or "No") based on X, last year's percent profit.
+We examine a large number of companies and discover that the mean value of X for companies that issued a dividend was ?X = 10, while the mean for 
+those that didn't was ?X = 0. In addition, the variance of X for these two sets of companies was\hat{\sigma^2} = 36. Finally,80% of companies issued dividends. Assuming that X follows a normal distribution, predict the probability that a company will issue a dividend this year given that its percentage 
+profit was X = 4 last year.
+Hint: Recall that the density function for a normal random variable is
+**ANs**
+Given, $\hat{\sigma^2}$= 36
+
+For $k_{th}$ class for normal districution Bayes' theorem is 
+
+$P_k(x)=\frac{\pi_k\cdot f_k(x)}{\sum_{l=1}^{k}\pi_l\cdot f_l(x)}$     
+
+
+Because f(x) is  normal then,
+
+$f_k(x)=\frac{1}{\sqrt{2\pi\sigma_k}}exp(-\frac{1}{2\sigma_k^2}(x-\mu_k)^2)$ 
+
+
+
+by substituting f(x)  and given parameters in above equation we get. 
+\[
+P_k(x)=\frac{\pi_k\frac{1}{\sqrt{2\pi\sigma_k}}exp(-\frac{1}{2\sigma_k^2}(x-\mu_k)^2)}{\sum_{l=1}^{k}\pi_l\frac{1}{\sqrt{2\pi\sigma_l}}exp(-\frac{1}{2\sigma_l^2}(x-\mu_l)^2)}
+\]
+
+or,
+
+$P_{yes}(x)=\frac{\pi_{yes}\frac{1}{\sqrt{2\pi\sigma_k}}exp(-\frac{1}{2\sigma_k^2}(x-\mu_{yes})^2)}{\pi_{yes}\frac{1}{\sqrt{2\pi\sigma_l}}exp(-\frac{1}{2\sigma_l^2}(x-\mu_{yes})^2)+\pi_{no}\frac{1}{\sqrt{2\pi\sigma_l}}exp(-\frac{1}{2\sigma_l^2}(x-\mu_{no})^2)}$
+
+$\mu_k\  and\ \sigma_k^2$ **are the mean and variance parameters for the kth class which are given here , hence we can substitute these in
+above equation**
+
+$P_{yes}=\frac{0.80*exp(-\frac{1}{2*36}(x-10)^2}{0.80*exp(-\frac{1}{2*36}(x-10)^2+0.20*exp(-\frac{1}{2*36}(x)^2}$
+
+or,
+
+$P_{yes}(X=4)=\frac{0.80*exp(-\frac{1}{72}(4-10)^2}{0.80*exp(-\frac{1}{72}(4-10)^2_+0.20*exp(-\frac{1}{72}(4)^2}$
+
+
+
+so, $P_{yes}(X=4)$=0.752
+
+**The probability that a company will issue a dividend this year given that its percentage profit was X = 4 last year is 75.2%**
+
+
+3. Continue from Homework \#3 \& 4 using the \textbf{Weekly} dataset from 4.7.10), fit a model for classification using the MclustDA function from the mclust-package. 
+
+```{r,include=TRUE,warning=FALSE,message=TRUE}
+library(ISLR)
+library(mclust)
+library(MASS)
+data(Weekly)
+attach(Weekly)
+train <-(Year < 2009)
+Weekly.train<-Weekly[train,]
+Weekly.test = Weekly[!train,]
+Direction.2009 = Direction[!train]
+wTrain <- Weekly.train[ ,3]
+wTrainClass <- Weekly.train[ , 9]
+wTest<-Weekly.test[,3]
+wTestClass<-Weekly.test[,9]
+weekly.MclustDA <- MclustDA(wTrain, wTrainClass)
+sum1 = summary(weekly.MclustDA)
+sum2 = summary(weekly.MclustDA,newdata=wTest,newclass=wTestClass)
+#sum1
+sum2
+#Training error calculationm
+preds1 = predict.MclustDA(weekly.MclustDA,newdata=wTrain)
+trainError<-mean(wTrainClass!=preds1$classification) #gives the Test Error that matches the confusion matrix.
+message("Train Error IS:",trainError)
+
+#test error calculation
+preds = predict.MclustDA(weekly.MclustDA,newdata=wTest)
+testError<-mean(Direction.2009!=preds$classification) #gives the Test Error that matches the confusion matrix.
+message("Test Error IS:",testError)
+#Cnfusion Matrix
+cm<-table( preds$classification,wTestClass)
+cm
+TP=cm[2,2] # no of true positive
+TN=cm[1,1] # no of true negative
+FP=cm[1,2] # no of false positive
+FN=cm[2,1] # no of false negative
+TPR=TP/(TP+FN) # true positive rate = P(y_hat=1|y=1)
+TNR=TN/(TN+FP) # true negative rate = P(y_hat=0|y=0)
+message("True Positive Rate is:",TPR)
+message("True Negative Rate is :",TNR)
+
+#FPR=1-TNR # false positive rate = P(y_hat=1|y=0)
+
+```
+  Eventhough confusion matrix looks similar,classError() function  is giving diffrent test error than  calculating by prediction.Hence I calculated error by both methods.
+  
+    i) What is the best model selected by BIC? What is the training error? What is the test error? Report the True Positive Rate and the True Negative Rate.
+    
+```{r}
+library(MASS)
+library(class)
+#library(ISLR)
+library(knitr)
+library(magrittr)
+library(kableExtra)
+#row.names(cm)=rep("predicted class",2)
+#t2=cbind(c("Down","up"),cm)
+#kable(t2,format="latex")%>%
+  # kable_styling()%>%
+   #add_header_above(c(" ","Real Class"=2)) %>%
+    #collapse_rows(column=1)
+
+x<-data.frame(ModelName=sum2$modelName,trainError,testError,TPR,TNR)
+kable(x, format = "markdown",digits = 4)
+```
+    
+    ii) Specify modelType="EDDA" and run MclustDA again. What is the best model selected by BIC? Find the training and test error rates. Report the True Positive and True Negative Rate.
+    
+```{r} 
+
+
+weekly.MclustDA1 <- MclustDA(wTrain, wTrainClass,modelType = "EDDA")
+sum3 = summary(weekly.MclustDA1,parameters = TRUE)
+sum4 = summary(weekly.MclustDA1,newdata=wTest,newclass=wTestClass)
+#sum3
+sum4
+#Training error calculationm
+preds2 = predict.MclustDA(weekly.MclustDA1,newdata=wTrain)
+trainError1<-mean(wTrainClass!=preds2$classification) #gives the Test Error that matches the confusion matrix.
+message("Train Error IS:",trainError1)
+
+#test error calculation
+preds3 = predict.MclustDA(weekly.MclustDA1,newdata=wTest)
+testError1<-mean(Direction.2009!=preds3$classification) #gives the Test Error that matches the confusion matrix.
+message("Test Error IS:",testError1)
+#Cnfusion Matrix
+cm1<-table( Actual=wTestClass, Predected=preds3$classification)
+cm1
+TP1=cm1[2,2] # no of true positive
+TN1=cm1[1,1] # no of true negative
+FP1=cm1[1,2] # no of false positive
+FN1=cm1[2,1] # no of false negative
+TPR1=TP1/(TP1+FN1) # true positive rate = P(y_hat=1|y=1)
+TNR1=TN1/(TN1+FP1) # true negative rate = P(y_hat=0|y=0)
+message("True Positive Rate is:",TPR1)
+message(" True Negative Rate is :",TNR1)
+```
+
+```{r}
+library(knitr)
+library(kableExtra)
+x1<-data.frame(ModelName=sum4$modelName,trainError1,testError1,TPR1,TNR1)
+kable(x1, format = "markdown",digits = 4)
+#n<-kable(x1, "markdown")
+#kable_styling(n,bootstrap_options = "striped", full_width = F)
+
+```
+
+    
+    iii) Compare the results with Homework \#3 \& 4. Which method performed the best? Justify your answer. 
+
+#HW3-glm
+```{r}
+ glm.Train <- glm(Direction ~  Lag2 , data=Weekly.train, family="binomial")
+#summary(glm.Train)
+ prob <- predict(glm.Train,Weekly.test,type = "response")
+# Turn probabilities into classes and look at their frequencies
+ p_class1 <- ifelse(prob > .50, "Up", "Down") 
+gt<-table(p_class1, Direction.2009)
+glmerror<-mean(p_class1!= Direction.2009)
+
+```
+# Hw4-lda
+```{r,warning=T,message=FALSE}
+#library(MASS)
+#attach(Weekly)
+#train <-(Year < 2009)
+#Weekly.test = Weekly[!train, ]
+#Direction.2009 = Direction[!train]
+lda.fit = lda(Direction ~ Lag2, data = Weekly, subset = train)
+#lda.fit
+lda.pred = predict(lda.fit, Weekly.test)
+lt<-table( Actual=Direction.2009,predected=lda.pred$class)
+ldaerror<-mean(lda.pred$class != Direction.2009)
+
+
+```
+
+I have choosen GLM and LDA from previous homework with lag2 as predictor variable with same data partition for
+all model.By comparing the Test error of GLM,LDA and MclustDA(EDDA) performence is similar and better than 
+other models.
+
+```{r}
+Models<-c("GLM","LDA","MclustDA","MclustDA(EDDA)")
+Testerrors<-c(glmerror,ldaerror,testError,testError1)
+errortb<-data.frame(Models,Testerrors)
+kable(errortb, format = "markdown",digits = 4)
+```
+
+
+  
+4. Continue from Homework \#3 \& 4 using the \textbf{Auto} dataset from 4.7.11). Fit a classification model using the MclustDA function from the mclust-package. Use the same training and test set from previous homework assignments.
+```{r,include=FALSE,warning=F,message=F}
+library(MASS)
+data(Auto)
+head(Auto)
+med <- median(Auto$mpg)
+mpg01 <-ifelse(Auto$mpg > med, 1,0)
+auto<-data.frame(Auto,mpg01)
+auto$mpg01<-factor(auto$mpg01)
+attach(auto)
+```
+
+#Split the data into a training set and a test set.
+
+```{r}
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(auto))
+## set the seed to make your partition reproductible
+set.seed(120)
+train_ind <- sample(seq_len(nrow(auto)), size = smp_size)
+#AutoTrain <- auto[train_ind, ]
+#AutoTest <- auto[-train_ind, ]
+#AutoTrainClass<-AutoTrain[,10]
+#AutoTestClass<-AutoTest[,10]
+#choose same variables used in 4.7.11(b)
+AutoTrain = cbind(displacement, horsepower , weight , year)[ train_ind, ]
+AutoTest = cbind(displacement ,horsepower , weight , year)[ -train_ind, ]
+AutoTrainClass = mpg01[train_ind]
+AutoTestClass = mpg01[-train_ind]
+train1 <- auto[train_ind, ]
+test1 <- auto[-train_ind, ]
+```
+
+**fit MclustDa model for Auto data set**
+
+```{r}
+
+auto.MclustDA <- MclustDA(AutoTrain, AutoTrainClass)
+sum.A = summary(auto.MclustDA)
+sum.B = summary(auto.MclustDA,newdata=AutoTest,newclass=AutoTestClass)
+sum.B
+#Training error calculationm
+preds11 = predict.MclustDA(auto.MclustDA,newdata=AutoTrain)
+trainError11<-mean(AutoTrainClass!=preds11$classification) #gives the Test Error that matches the confusion matrix.
+message("Train Error IS:",trainError11)
+
+#test error calculation
+preds22 = predict.MclustDA(auto.MclustDA,newdata=AutoTest)
+testError22<-mean(AutoTestClass!=preds22$classification) #gives the Test Error that matches the confusion matrix.
+message("Test Error IS:",testError22)
+#Cnfusion Matrix
+cm11<-table( Actual=AutoTestClass, Predected=preds22$classification)
+cm11
+TP11=cm11[2,2] # no of true positive
+TN11=cm11[1,1] # no of true negative
+FP11=cm11[1,2] # no of false positive
+FN11=cm11[2,1] # no of false negative
+TPR11=TP11/(TP11+FN11) # true positive rate = P(y_hat=1|y=1)
+TNR11=TN11/(TN11+FP11) # true negative rate = P(y_hat=0|y=0)
+message("True Positive Rate is:",TPR11)
+message("True Negative Rate is :",TNR11)
+```
+
+    i)  What is the best model selected by BIC? What is the training error? What is the test error? Report the  True Positive Rate and the True Negative Rate.
+    
+```{r}
+library(knitr)
+cm11
+
+x4<-data.frame(ModelName=sum.B$modelName,trainError=trainError11,testError=testError22,TPR=TPR11,TNR=TNR11)
+kable(x4, format = "markdown",digits = 4)
+```
+    ii) Specify modelType="EDDA" and run MclustDA again. What is the best model selected by BIC? Find the training and test error rates. Report the True Positive and True Negative Rate.
+    
+```{r}
+
+auto.MclustDA1 <- MclustDA(AutoTrain, AutoTrainClass,modelType = "EDDA")
+sum.A1 = summary(auto.MclustDA1)
+sum.B1 = summary(auto.MclustDA1,newdata=AutoTest,newclass=AutoTestClass)
+sum.B1
+#Training error calculationm
+preds111 = predict.MclustDA(auto.MclustDA1,newdata=AutoTrain)
+trainError111<-mean(AutoTrainClass!=preds111$classification) #gives the Test Error that matches the confusion matrix.
+message("Train Error IS:",trainError111)
+
+#test error calculation
+preds221 = predict.MclustDA(auto.MclustDA1,newdata=AutoTest)
+testError221<-mean(AutoTestClass!=preds221$classification) #gives the Test Error that matches the confusion matrix.
+message("Test Error IS:",testError221)
+#Cnfusion Matrix
+cm111<-table( Actual=AutoTestClass, Predected=preds221$classification)
+cm111
+TP111=cm111[2,2] # no of true positive
+TN111=cm111[1,1] # no of true negative
+FP111=cm111[1,2] # no of false positive
+FN111=cm111[2,1] # no of false negative
+TPR111=TP111/(TP111+FN111) # true positive rate = P(y_hat=1|y=1)
+TNR111=TN111/(TN111+FP111) # true negative rate = P(y_hat=0|y=0)
+message("True Positive Rate is:",TPR111)
+message("True Negative Rate is :",TNR111)
+```
+    
+```{r}
+library(knitr)
+x41<-data.frame(ModelName=sum.B1$modelName,trainError=trainError111,testError=testError221,TPR=TPR111,TNR=TNR111)
+kable(x41, format = "markdown",digits = 4)
+```    
+   
+    iii) Compare the results with Homework \#3 \& 4. Which method performed the best? Justify your answer. 
+
+
+I choose QDA model  from previous homework with lowest test error. I used same data partition method and predictor
+variable as before (mpg01 ~ displacement+horsepower+weight+year).All THE methods, QDA, MclustDA and MclustDA(EDDA)
+produce same test error.
+
+```{r}
+library(MASS)
+qda.fit1 <- qda(mpg01 ~ displacement+horsepower+weight+year, data=train1)
+pred.qda <- predict(qda.fit1, test1)
+table(Predected=pred.qda$class, Actual=test1$mpg01)
+qe<-mean(pred.qda$class != test1$mpg01)
+```
+
+```{r}
+library(knitr)
+Methods<-c("QDA","MclustDA","MclustDA(EDDA)")
+Test_error<-c(qe,testError22,testError221)
+errortb1<-data.frame(Methods,Test_error)
+kable(errortb1, format = "markdown",digits = 4)
+```
+
+5.  Read the paper "Who Wrote Ronald Reagan's Radio Addresses?" posted on D2L. Write a one page (no more, no less) summary.
+
+
+
+6. Last homework you chose a dataset from [this website](https://archive.ics.uci.edu/ml/datasets.html). Please do some initial exploration of the dataset. If you don't like the dataset you chose you may change it with another. It has to be a new dataset that we haven't used in class. Please report the analysis you did and dicuss the challenges with analyzing the data.
+
+```{r}
+df=read.csv("adult.data.csv", header = F)
+smp_size <- floor(0.02 * nrow(df))
+## set the seed to make your partition reproductible
+set.seed(12)
+indx <- sample(seq_len(nrow(df)), size = smp_size)
+smdata <- df[indx, ]
+#newdata<-data.frame(name,smdata)
+names(smdata)<-c("age","workclass","fnlwgt","education","education-num", "marital-status","occupation","relationship","race", "sex","capital-gain","capital-loss","hours-per-week","native-country","income")
+head(smdata)
+str(smdata)
+attach(smdata)
+#tr = cbind(age, education, occupation, sex, hours-per-week,income)[indx,]
+#smdata1<-smdata[,2&3]
+
+```
+
+```{r}
+smdata$`native-country`<-NULL
+smdata$fnlwgt<-NULL
+smdata$relationship<-NULL
+smdata$race<-NULL
+smdata$education<-NULL
+smdata$`marital-status`<-NULL
+smdata$`capital-gain`<-NULL
+smdata$`capital-loss`<-NULL
+plot(smdata,col=3, main="Scator plot of Adult data")
+table( smdata$income )
+```
+##ggplot
+
+```{r,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(GGally)
+ggpairs(smdata, aes(colour = income, alpha = 0.2),cardinality_threshold = 16)
+```
+
+
+```{r}
+par(mfrow = c(1,2))
+ggplot(smdata,aes(income,education))+geom_boxplot(fill="Light green")+ggtitle("edu vs income")
+ggplot(smdata,aes(income,occupation))+geom_boxplot(fill="Light green")+ggtitle("occup vs income")
+```
+

@@ -1,0 +1,115 @@
+---
+title: "Chp2. Statistical Learning"
+author: "Prakash Paudyal"
+date: "December 10, 2017"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+# Due January 16th
+
+
+Answer all questions specified on the problem but if you see something interesting and want to do more analysis please report it as well. Don't forget to include discussion.
+
+Submit your \textbf{.rmd} file with the knitted \textbf{PDF} (or knitted Word Document saved as a PDF). If you are still having trouble with .rmd, let us know and we will help you, but both the .rmd and the PDF are required.
+
+This file can be used as a skeleton document for your code/write up. Please follow the instructions found under Content titled Format+STAT-702+HW. 
+
+For any question asking for plots/graphs, please do as the question asks as well as do the same but using the respective commands in the GGPLOT2 library. (So if the question asks for one plot, your results should have two plots. One produced using the given R-function and one produced from the GGPLOT2 equivalent)
+
+You do not need to include the above statements.
+
+Please do the following problems from the text book ISLR.
+	
+1. Question 2.4.2 pg 52
+
+2. Question 2.4.4 pg 53
+
+3. Question 2.4.6 pg 53
+
+4. Question 2.4.8 pg 54-55
+
+#a
+
+```{r,include=FALSE,warning=F,message=F}
+library(ISLR)
+#data(College)
+college <- read.csv("College.csv")
+
+
+```
+
+#b
+```{r}
+#fix(college)
+#rownames (college )=college [,1]
+#fix (college )
+#college =college [,-1]
+#fix (college )
+
+```
+
+```{r}
+rownames <- college[, 1]
+college <- college[, -1]
+head(college)
+```
+
+
+#c(i)
+```{r}
+summary(college)
+```
+
+#c(ii)
+```{r}
+pairs(college[,1:10])
+```
+
+#c(iii)
+```{r}
+plot(college$Private,college$Outstate,xlab="Private university",ylab="Out of state tution fee",main="Plot out of state vs private")
+```
+
+#c(iv)
+
+```{r}
+Elite <-rep ("No",nrow(college ))
+Elite [college$Top10perc >50]<-" Yes"
+Elite <-as.factor (Elite)
+college <-data.frame(college ,Elite)
+summary(college$Elite)
+plot(college$Elite,college$Outstate,  xlab="Private university",ylab="Out of state tution fee",main="Plot out of state vs Elite" )
+
+```
+
+#c(v)
+```{r}
+par(mfrow=c(2,2))
+hist(college$Apps ,xlab = "Applicant",ylab = "Total number",col = 5)
+hist(college$Accept ,xlab = "Accepted",ylab = "Total number",col = 3)
+hist(college$Enroll ,xlab = "Enrolled",ylab = "Total number",col = 5)
+hist(college$Grad.Rate ,xlab = "Grad.Rate",ylab = "percent ",col = 3)
+
+
+
+```
+
+#c(Vi)
+```{r}
+library(ggplot2)
+
+summary(college$Grad.Rate)
+
+summary(college$Enroll)
+ggplot(College, aes(Private, Enroll)) +  geom_boxplot()
+#top 10%
+ggplot(College, aes(Top10perc, Grad.Rate)) +  geom_point()
+```
+
+# Bar plot private vs out of state shows that private universites have higher out of state tuition fee than public universites.Elite school has higher out of state tuition than non-elite school.Maximum enrollment of one of the college   is 6392 and minimum enrollment is 35.Graduataion rate is range from 10 to 118.                                             Private universites has less enrollment than public shcool.One of the unversity has 103% faculty with PhD.         Graduation rate of the universities  with higher top 10% sutuent is higher than other.

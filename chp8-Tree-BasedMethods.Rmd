@@ -1,0 +1,763 @@
+---
+title: "chp8-Tree-BasedMethods"
+author: "Prakash Paudyal"
+output:
+  html_document:
+    df_print: paged
+  latex_engine: xelatex
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+Please do the following problems from the text book ISLR. (use set.seed(702) to replicate your results).
+
+#1. Question 8.4.4 pg 332
+(4.)This question relates to the plots in Figure 8.12.
+
+##(a) 
+Sketch the tree corresponding to the partition of the predictor space illustrated in the left-hand panel of Figure 8.12. The numbers inside the boxes indicate the mean of Y within each region.
+
+```{r,warning=FALSE}
+library(knitr)
+library(data.tree)
+par(mfrow=c(2, 2))
+rukh <- Node$new("X1<1")
+x2 <- rukh$AddChild("X2<1")
+  x1 <- x2$AddChild("X1<0")
+  r15 <- x2$AddChild("15")
+     r3 <- x1$AddChild("3")
+     x21 <- x1$AddChild("x2<0")
+     r10 <- x21$AddChild("10")
+     r0 <- x21$AddChild("0")
+r5 <- rukh$AddChild("5")
+print(rukh)
+SetGraphStyle(rukh, rankdir = "TB")
+SetEdgeStyle(rukh, arrowhead = "vee", color = "grey35", penwidth = 2)
+SetNodeStyle(rukh, style = "filled,rounded", shape = "box", fillcolor = "lightblue", 
+            fontname = "helvetica", tooltip = GetDefaultTooltip)
+Do(rukh$leaves, function(node) SetNodeStyle(node, shape = "egg"))
+plot(rukh)
+```
+
+#(b)
+Create a diagram similar to the left-hand panel of Figure 8.12,using the tree illustrated in the right-hand panel of the same
+figure. You should divide up the predictor space into the correct regions, and indicate the mean for each region.
+
+```{r,warning=F,message=F}
+par(xpd = NA)
+plot(NA, NA, type = "n", xlim = c(-2, 2), ylim = c(-3, 3), xlab = "X1", ylab = "X2")
+# X2 < 1
+lines(x = c(-2, 2), y = c(1, 1))
+# X1 < 1 with X2 < 1
+lines(x = c(1, 1), y = c(-3, 1))
+text(x = (-2 + 1)/2, y = -1, labels = c(-1.8),col = "red")
+text(x = 1.5, y = -1, labels = c(0.63),col = "red")
+# X2 < 2 with X2 >= 1
+lines(x = c(-2, 2), y = c(2, 2))
+text(x = 0, y = 2.5, labels = c(2.49),col = "red")
+# X1 < 0 with X2<2 and X2>=1
+lines(x = c(0, 0), y = c(1, 2))
+text(x = -1, y = 1.5, labels = c(-1.06),col = "red")
+text(x = 1, y = 1.5, labels = c(0.21),col = "red")
+```
+
+#2. Question 8.4.8 pg 332
+8. In the lab, a classification tree was applied to the Carseats data set after converting Sales into a qualitative response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable.
+
+##(a) 
+Split the data set into a training set and a test set.
+
+Splited data into 60% to  training set and 40% to test set.
+
+```{r,warning=FALSE,message=FALSE}
+library(ISLR)
+library(knitr)
+data(Carseats)
+str(Carseats)
+attach(Carseats)
+set.seed(702)
+train <- sample(1:nrow(Carseats), .6*nrow(Carseats))
+#train = sample(dim(Carseats)[1], dim(Carseats)[1]/2)
+Carseats.train = Carseats[train, ]
+Carseats.test = Carseats[-train, ]
+kable(head(Carseats))
+```
+
+##(b) 
+Fit a regression tree to the training set. Plot the tree, and interpret the results. What test MSE do you obtain?
+
+
+```{r}
+library(tree)
+#library(lattice)
+#library(party)
+#library(partykit)
+tree.carseats = tree(Sales ~ ., data = Carseats.train)
+summary(tree.carseats)
+plot(tree.carseats)
+text(tree.carseats,pretty = 0, cex=.75)
+
+```
+
+**ggplot for carseats tree**
+
+```{r}
+library(ggplot2)
+library(ggdendro)
+tree_data <- dendro_data(tree.carseats)
+ggplot() +
+  geom_segment(data = tree_data$segments, 
+               aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_text(data = tree_data$labels, 
+            aes(x = x, y = y, label = label), size = 3, vjust = -0.5) +
+  geom_text(data = tree_data$leaf_labels, 
+            aes(x = x, y = y, label = label), size = 3, vjust = 0.85) 
+#theme_dendro()
+```
+
+
+
+```{r}
+pred.carseats = predict(tree.carseats, Carseats.test)
+MSE<-mean((Carseats.test$Sales - pred.carseats)^2)
+paste("Test MSE of tree model  = ", MSE)
+
+```
+
+**Discussion:**
+Here we can see the variables  ShelveLoc" , "Price", "Age", "Advertising"  and "CompPrice"   are used to  grow the regression tree.The regression tree for predicting sales from carseats data based on the shelving location for car seat, price , average
+age of the local population, compettitor price and advertising budget for company each location. Among them shelveloc variable
+is most important predictor which devide the predectior space into two branch according to either observation is bad or mdeium versus good.we can also see that good branch of tree has higher sales prediction than medium or bad branch side of tree.The predictor "price" is second most important predictor of carseat sales.Similarly predictor space is further devided acooriding 
+to age and comprice and advertisiment.Tree has 18 terminal nodes or leaves which show  the mean of the response for the observations that fall there.
+
+
+
+
+
+
+##(c) 
+Use cross-validation in order to determine the optimal level of tree complexity. Does pruning the tree improve the test MSE?
+
+
+```{r}
+# Perform cross-validation and plot
+set.seed(702)
+cv.carseats <- cv.tree(tree.carseats, FUN=prune.tree)
+plot(cv.carseats, type='b')
+size.min <- cv.carseats$size[which.min(cv.carseats$dev)]
+paste("Size with the lowest deviance: ", size.min)
+points(size.min, cv.carseats$dev[size.min], col = "red", cex = 2, pch = 20)
+
+```
+**ggplot**
+
+```{r}
+Size<-c(cv.carseats$size)
+Deviance<-c(cv.carseats$dev)
+da<-data.frame(Size,Deviance)
+ggplot(da, aes(x=Size, y=Deviance))+ geom_line(colour="green")+geom_point(colour="blue") +geom_point(aes(size.min,cv.carseats$dev[size.min],col="red"))
+```
+
+** Prune and create new tree**
+
+```{r}
+prune.carseats <- prune.tree(tree.carseats, best=size.min)
+plot(prune.carseats)
+text(prune.carseats, pretty=0,cex=.65)
+```
+**ggplot purne tree**
+
+```{r}
+library(ggplot2)
+library(ggdendro)
+tree_data1 <- dendro_data(prune.carseats)
+ggplot() +
+  geom_segment(data = tree_data1$segments, 
+               aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_text(data = tree_data1$labels, 
+            aes(x = x, y = y, label = label), size = 3, vjust = -0.5) +
+  geom_text(data = tree_data1$leaf_labels, 
+            aes(x = x, y = y, label = label), size = 3, vjust = 0.85) 
+#theme_dendro()
+```
+
+```{r}
+pred.pruned = predict(prune.carseats, Carseats.test)
+purn_mse<-mean((Carseats.test$Sales - pred.pruned)^2)
+paste("Test MSE of Purned tree model  = ", purn_mse)
+
+```
+
+Crossvalidation method selected the  size of 9 and reduced the tree size but it did not improve the test error.
+
+##(d) 
+Use the bagging approach in order to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables are most important.
+
+**ANS** Bagging is simply a special case of a random forest with m = p. We used 10 predictor  (mtry=10) 
+
+```{r}
+library(randomForest)
+set.seed(702)
+bag.carseats = randomForest(Sales ~ ., data = Carseats.train, mtry = 10, ntree = 500,  importance = TRUE)
+bag.pred = predict(bag.carseats, Carseats.test)
+MSE_BAG<-mean((Carseats.test$Sales - bag.pred)^2)
+paste("Test MSE of Baging tree model  = ", MSE_BAG)
+
+
+```
+Baging method decreased the test error to 3.11
+
+```{r}
+library(knitr)
+kable(importance(bag.carseats))
+
+```
+
+**Discussion:**
+Importance table shows the effect on MSE and purity of node by excluding the perticular variables from tree model.Here, Model's MSE increased by 72% and 64.3%   if  ShelveLoc"  and "Price"variables are exculded from model respectievly. The variable with largest mean decrease are ShelveLoc"  and "Price", hence these two variables are most important.
+
+##(e) 
+Use random forests to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables are most important. Describe the effect of m, the number of variables considered at each split, on the error rate obtained
+
+**ANS**
+ 
+```{r}
+set.seed(702)
+rf.carseats = randomForest(Sales ~ ., data = Carseats.train, mtry = 5, ntree = 500, importance = T)
+rf.pred = predict(rf.carseats, Carseats.test)
+paste("MSE test error of random forest=", mean((Carseats.test$Sales - rf.pred)^2))
+```
+```{r,warning=F,message=F}
+importance(rf.carseats)
+```
+
+**Discussion:**
+Changing value of m , test errror increased to 3.13. By default, randomForest() uses p/3 variables when building a random forest of regression trees. Here we used mtry =5, which means 5 predictors should be considered for each split of the tree. By looking at mean decrease rate at importance table ,Still ShelveLoc and Price are most important variables for predicting  sales.
+
+
+#3. Question 8.4.9 pg 334
+(9.) This problem involves the OJ data set which is part of the ISLR package.
+##(a) 
+
+Create a training set containing a random sample of 800 observations,and a test set containing the remaining observations.
+
+```{r,message=FALSE}
+library(ISLR)
+attach(OJ)
+str(OJ)
+set.seed(702)
+train = sample(dim(OJ)[1], 800)
+OJ.train = OJ[train, ]
+OJ.test = OJ[-train, ]
+```
+
+##(b)
+Fit a tree to the training data, with Purchase as the response and the other variables as predictors. Use the summary() function to produce summary statistics about the tree, and describe the results obtained. What is the training error rate? How many terminal nodes does the tree have?
+
+
+```{r}
+library(tree)
+oj.tree = tree(Purchase ~ ., data = OJ.train)
+summary(oj.tree)
+```
+
+**Discusssion:**
+The tree used two variables  LoyalCH"an "PriceDiff  to grow the tree and it has 8 terminal nodes. The traning error rate is 16%. 
+For classification tree deviance reported at summary is 0.77.
+
+##(c)
+Type in the name of the tree object in order to get a detailed text output. Pick one of the terminal nodes, and interpret the
+information displayed.
+
+```{r}
+oj.tree
+```
+
+**Discussion:**
+In the tree structure , we picked the   node 24  with * which is terminal node.The spliting variable at this node is PriceDiff.The split  decision criterion on this node is PriceDiff < -0.165.There are 34 observation at this branch of tree with deviance of 42.81.The prediction on this node is purchase=MM. About 32% of observation in this branch take value of CH and remaing 78% of observation take value of MM.
+
+##(d) 
+Create a plot of the tree, and interpret the results.
+
+```{r}
+plot(oj.tree)
+text(oj.tree, pretty = 0,cex=.7)
+```
+
+**ggplot of tree of Orange Juce data**
+
+```{r}
+ddata <- dendro_data(oj.tree)
+  ggplot() + 
+    geom_segment(data = ddata$segments, 
+                 aes(x = x, y = y, xend = xend, yend = yend)) + 
+    geom_text(data = ddata$labels, 
+              aes(x = x, y = y, label = label), size = 3, vjust = 0) +
+    geom_text(data = ddata$leaf_labels, 
+              aes(x = x, y = y, label = label), size = 3, vjust = 1) +
+    theme_dendro()+ggtitle("ggplot-tree of Orange Juce data")
+```
+
+**Discussion**
+As we can see in tree, the Customer brand loyalty for CH (LOyalCH) is most important variable. Predictor space is devided by whether chustomer 
+brand loyalty is less than 0.5 or not.Second level of  tree is also further devided by checking LOyalCH. Here customer LOyalCH<0.27 are predected 
+as MM with comparing with  price difference. and LOyalCH>0.76 are predictes as CH with comparing with or with out price.
+
+##(e) 
+Predict the response on the test data, and produce a confusion matrix comparing the test labels to the predicted test labels. 
+What is the test error rate?
+
+```{r}
+oj.pred = predict(oj.tree, OJ.test, type = "class")
+table(OJ.test$Purchase, oj.pred)
+
+```
+
+Test error 
+```{r,echo=TRUE}
+1 - (153+ 75) / 270
+
+```
+
+Test error rate is about 15%
+
+
+##(f) 
+Apply the cv.tree() function to the training set in order to determine the optimal tree size.
+
+```{r}
+set.seed(702)
+cv.oj = cv.tree(oj.tree,  FUN=prune.misclass)
+cv.oj
+```
+
+##(g) 
+Produce a plot with tree size on the x-axis and cross-validated classification error rate on the y-axis.
+
+```{r}
+plot(cv.oj$size, cv.oj$dev, type = "b", xlab = "Tree Size", ylab = "Deviance")
+
+```
+
+```{r}
+Size<-c(cv.oj$size)
+Deviance<-c(cv.oj$dev)
+daa<-data.frame(Size,Deviance)
+ggplot(daa, aes(x=Size, y=Deviance))+ geom_line(colour="green")+geom_point(colour="blue")+ggtitle("ggplot-size vs deviance of purned tree")
+```
+##(h)
+Which tree size corresponds to the lowest cross-validated classification error rate?
+
+```{r}
+size.min <- cv.oj$size[which.min(cv.oj$dev)]
+paste("Size with the lowest deviance: ", size.min)
+```
+
+The tree with 8  and 7 terminal nodes results in the lowest cross-validation error rate, with 159 cross-validation errors.
+
+##(i)
+Produce a pruned tree corresponding to the optimal tree size obtained using cross-validation. If cross-validation does not lead
+to selection of a pruned tree, then create a pruned tree with five terminal nodes.
+
+```{r}
+prune.oj <- prune.misclass(oj.tree, best=5)
+plot(prune.oj)
+text(prune.oj, pretty = 0,cex=.65)
+```
+ **ggplot of purned tree**
+ 
+
+```{r}
+ddataa <- dendro_data(prune.oj)
+  ggplot() + 
+    geom_segment(data = ddataa$segments, 
+                 aes(x = x, y = y, xend = xend, yend = yend)) + 
+    geom_text(data = ddataa$labels, 
+              aes(x = x, y = y, label = label), size = 3, vjust = -0.5) +
+    geom_text(data = ddataa$leaf_labels, 
+              aes(x = x, y = y, label = label), size = 3, vjust = 1) +
+    theme_dendro()+ggtitle("ggplot-  purned tree")
+```
+
+ 
+ **Discussion:**
+ cross validation did not select a purned tree since the minimum best size occure at best =8 which is same as original tree.
+ Then I selected best=5 but  purne.misclass() did not produce  tree with 5 terminals nodes.According to R Docunetation,  if there is no tree in sequence of the requested size , the  next largest is returned by purne.misclass().So I got the purne tree with 7 terminal nodes.
+ 
+##(j) 
+Compare the training error rates between the pruned and unpruned trees. Which is higher?
+
+```{r}
+summary(prune.oj)
+summary(oj.tree)
+
+```
+ **Discussion:**
+Unpurned and purned tree produce same classification error rate for training data with 8 and 7 terminal nodes respectievly.
+
+##(k) 
+Compare the test error rates between the pruned and unpruned trees. Which is higher?
+
+```{r,warning=F,message=F}
+pred.unpruned = predict(oj.tree, OJ.test, type = "class")
+misclass.unpruned = sum(OJ.test$Purchase != pred.unpruned)
+misclass.unpruned/length(pred.unpruned)
+```
+
+```{r}
+pred.pruned = predict(prune.oj, OJ.test, type = "class")
+misclass.pruned = sum(OJ.test$Purchase != pred.pruned)
+misclass.pruned/length(pred.pruned)
+```
+ 
+ **Discussion:**
+Both test error rate are same.
+
+#4. Question 8.4.10 pg 334
+(10.) We now use boosting to predict Salary in the Hitters data set.
+##(a)
+Remove the observations for whom the salary information is unknown, and then log-transform the salaries.
+
+```{r}
+library(ISLR)
+data(Hitters)
+#kable(head(Hitters))
+str(Hitters)
+sum(is.na(Hitters$Salary))
+Hitters = Hitters[-which(is.na(Hitters$Salary)), ]
+#Hitters <- na.omit(Hitters)
+sum(is.na(Hitters$Salary))
+Hitters$Salary = log(Hitters$Salary)
+str(Hitters)
+
+```
+ 
+ **Discussion:**
+There were 59 observation with missing values of salary , which were removed. Log transformation of salary variable was done.
+
+##(b)
+Create a training set consisting of the first 200 observations, and a test set consisting of the remaining observations.
+
+```{r}
+train = 1:200
+Hitters.train = Hitters[train, ]
+Hitters.test = Hitters[-train, ]
+```
+
+##(c)
+
+Perform boosting on the training set with 1,000 trees for a range of values of the shrinkage parameter $lamda$.
+Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+
+```{r}
+library(gbm)
+set.seed(702)
+pows = seq(-10, -0.2, by = 0.1)
+lambdas = 10^pows
+length.lambdas = length(lambdas)
+train.errors = rep(NA, length.lambdas)
+test.errors = rep(NA, length.lambdas)
+for (i in 1:length.lambdas) {
+    boost.hitters = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", 
+        n.trees = 1000, shrinkage = lambdas[i])
+    train.pred = predict(boost.hitters, Hitters.train, n.trees = 1000)
+    test.pred = predict(boost.hitters, Hitters.test, n.trees = 1000)
+    train.errors[i] = mean((Hitters.train$Salary - train.pred)^2)
+    test.errors[i] = mean((Hitters.test$Salary - test.pred)^2)
+}
+Shrinkage<-c(lambdas)
+TestMSE<-c(test.errors)
+TrainMSE<-c(train.errors)
+cvbo<-data.frame(Shrinkage,TestMSE,TrainMSE)
+plot(lambdas, train.errors, type = "b", xlab = "Shrinkage", ylab = "Train MSE", 
+    col = "green", pch = 20,main="Train MSE vs Shinkage for bosting")
+ggplot(cvbo,aes(x=Shrinkage,y=TrainMSE))+geom_point(colour="blue")+geom_line(colour="green")+ggtitle("ggplot Shrinkage vs Train MSE")
+
+```
+
+##(d) 
+Produce a plot with different shrinkage values on the x-axis and the corresponding test set MSE on the y-axis.
+
+```{r}
+#par(mfrow = c(1,2))
+plot(lambdas, test.errors, type = "b", xlab = "Shrinkage", ylab = "Test MSE", col = "salmon", pch = 20,main="Test MSE vs Shinkage for bosting")
+ggplot(cvbo,aes(x=Shrinkage,y=TestMSE))+geom_point(colour="blue")+geom_line(colour="green")+ggtitle("ggplot Shrinkage vs Test MSE")
+
+```
+
+```{r}
+min(test.errors)
+lambdas[which.min(test.errors)]
+```
+
+**Discussion:**
+Minimum test error is 0.2426616 at lamda=0.1584893
+
+##(e) 
+Compare the test MSE of boosting to the test MSE that results  from applying two of the regression approaches seen in Chapters 3 and 6.
+linear model
+
+```{r}
+lm.fit = lm(Salary ~ ., data = Hitters.train)
+lm.pred = predict(lm.fit, Hitters.test)
+mean((Hitters.test$Salary - lm.pred)^2)
+```
+
+lasso
+
+```{r,message=FALSE}
+library(glmnet)
+set.seed(134)
+x = model.matrix(Salary ~ ., data = Hitters.train)
+y = Hitters.train$Salary
+x.test = model.matrix(Salary ~ ., data = Hitters.test)
+lasso.fit = glmnet(x, y, alpha = 1)
+lasso.pred = predict(lasso.fit, s = 0.01, newx = x.test)
+mean((Hitters.test$Salary - lasso.pred)^2)
+```
+
+**Disscussion:**
+MSE for boost=0.2426616 which is less than linear  linear regression and regularization method lasso.
+
+##(f) 
+Which variables appear to be the most important predictors in the boosted model?
+
+```{r}
+boost.best = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", 
+    n.trees = 1000, shrinkage = lambdas[which.min(test.errors)])
+summary(boost.best)
+```
+
+**Disscussion:**
+
+CAtBat, PutOut and Walks are the most important variables to predict the salary of hitter data.
+
+##(g) 
+Now apply bagging to the training set. What is the test set MSE for this approach?
+
+```{r}
+set.seed(21)
+rf.hitters = randomForest(Salary ~ ., data = Hitters.train, ntree = 500, mtry = 19)
+rf.pred = predict(rf.hitters, Hitters.test)
+mean((Hitters.test$Salary - rf.pred)^2)
+```
+**Disscussion:**
+The test set MSE for bagging is 0.231884 which is slightly less than bosting method.
+
+#5.
+In the past couple of homework assignments you have used different classification methods to analyze the dataset you chose. For this homework, use tree-based classification methods (tree,bagging, randomforest, boosting) to model your data. Find the test error using any/all of methods (VSA, K-fold CV). Compare the results you obtained with the result from previous homework. Did the results improve? (Use the table you previously made to compare results)
+
+**Ans:**
+I used tree() to model tree and bagging() for bagging and randomforest() for random forest and boositing () for boosting the data.
+Among them random forest resulted slighltly less test error.Tree model produced same test error for VSA and CV. Baging  has less error in VSA than
+cv. Cross validation approach slightly improved the error rate in boosting.
+By comparing the result from pervious homework logistic regression with 5fold cross validation  and SVM  test error were less than current test error resulted by tree ,paging ,random forest and boosting. Among all the models SVM has very small test error .Hence Tree based model 
+Did not improve the test error result.
+
+##Error Table
+```{r}
+library(knitr)
+name<-c("Method","VSA","LOOCV","5-fold CV")
+Method<-c("Logistic Reg","knn","LDA","QDA","MclustDA","MclustDA (EDDA)","SVM","Tree","Baging","RandomForest","Boosting")
+VSA<-c(0.1793391,0.2428449,0.1770053,0.2154526,0.2117676,0.2067314,0.0002456701,0.1788887,0.178888741546214,0.1745127,0.1788887)
+LOOCV<-c(0.1873464,0.3593366,0.2168305,0.213145,"NA",0.2067314,0.001228501,"NA","NA","NA","NA")
+FOLD.5CV<-c(0.1219478,0.2909104,0.2194654,0.2096682,0.2307535,0.2027846,0.0002047502,0.1788887,0.185447150877503,0.1705495,0.1717061)
+dat<-data.frame(Method,VSA,LOOCV,FOLD.5CV)
+kable(dat)
+```
+
+
+\begin{center}
+	\begin{tabular}{| l || l | l | l |}
+		\hline 
+		&
+		 \multicolumn{3}{|c|}{Test Error}  \\
+		\hline
+		Method & VSA &LOOCV & 5-Fold CV \\ \hline\hline
+		Logistic Reg & 0.1793391 & 0.1873464 & 0.1219478 \\ \hline
+		KNN & 0.2428449& 0.3593366 & 0.2909104\\ \hline
+		LDA & 0.1770053 & 0.2168305 &0.2194654  \\\hline
+		QDA &0.2154526 &0.213145 & 0.2096682\\\hline
+		MclustDA &0.2117676 & & 0.2307535\\	\hline
+		MclustDA (EDDA) &0.2067314 & & 0.2027846\\	\hline 
+		SVM &0.0002456701 &0.001228501&0.0002047502 \\\hline
+		Tree &0.1788887 & &0.1788887 \\ \hline
+    Baging &0.178888741546214 & &0.185447150877503 \\ \hline
+    RandomForest &0.1745127 & &0.1705495 \\ \hlineTree
+    Boosting &0.1788887 & &0.1717061 \\
+    
+    
+	\end{tabular}
+\end{center}
+
+
+#Q5 details
+Tree model for adult data
+
+I have used cleand data .I did not include process of  cleaning  and variables selection which was done at previous homework.
+
+```{r}
+adult.nlvl<-read.csv("adult.nlvl.csv",header = TRUE)
+head(adult.nlvl)
+##split the data into 75:25 ratio.
+```
+
+split 75%
+
+```{r}
+## 75% of the sample size
+set.seed(702)
+#adult.nlvl$incomelevel <- ifelse(adult.nlvl$income=="<=50K", 0,1)
+#Auto$mpg01 <- ifelse(Auto$mpg>median(Auto$mpg),1,0)
+#adult.nlvl$incomelevel<-factor(adult.nlvl$incomelevel)
+smp_size <- floor(0.75 * nrow(adult.nlvl))
+## set the seed to make partition reproductible
+train_ind <- sample(seq_len(nrow(adult.nlvl)), size = smp_size)
+
+train <- adult.nlvl[train_ind, ]
+test <- adult.nlvl[-train_ind, ]
+```
+
+
+
+##Vaildation set approach
+
+```{r,warning=FALSE}
+library(rpart)
+library(party)
+library(partykit)
+library(rpart.plot)
+#library(rattle)
+library(RColorBrewer)
+library(tree)
+#rt1<-rpart(incomelevel ~age+ workclass+ educationnum+ maritalstatus+occupation+relationship+race+ sex+hoursperweek+nativecountry, data=train)
+adult.tree<-tree(incomelevel ~., data=train)
+plot(adult.tree)
+text(adult.tree, pretty = 0,cex=.7)
+
+#rpart.plot(rt1, box.palette="orange",branch.lty=3, shadow.col="green", nn=TRUE)
+#print(rt1$cptable)
+```
+
+error
+```{r}
+ad.pred = predict(adult.tree, test, type = "class")
+table(test$incomelevel, ad.pred)
+
+```
+
+Misclassification Error
+
+```{r,echo=TRUE}
+1 - (5397+ 795) / 7541
+
+```
+
+Test error rate is about 17.8%
+
+cross validation set approach
+
+```{r}
+set.seed(702)
+cv.adlt = cv.tree(adult.tree,  FUN=prune.misclass)
+#cv.adlt
+```
+
+```{r}
+prune.adlt <- prune.misclass(adult.tree, best=5)
+plot(prune.adlt)
+text(prune.adlt, pretty = 0,cex=.65)
+```
+
+**Disscussion:**
+which is exactly similar to original tree with out cross validation , cross validation indicates the size=5 where
+error is minimum.
+
+
+
+
+#Bagging method
+
+Vaildation set approach
+
+I used  Bagging() for bagging tree model for ADULT data
+
+```{r,warning=FALSE}
+library(adabag)
+bag.adltt<-bagging(incomelevel~., train , na.action=na.rpart)
+bag.predd = predict(bag.adltt, test, type = "class")
+#MSE.bgad<-mean(test$incomelevel!= bag.predd)
+bag.error<-bag.predd$error
+paste("Test Error of  Baging tree model  = ", bag.error)
+```
+## cross validation for baging, I used bagging.cv
+```{r,warning=FALSE}
+set.seed(702)
+library(adabag)
+churn.baggingcv = bagging.cv(incomelevel ~ ., v=10, data=train, mfinal=10)
+churn.baggingcv$confusion
+cv.bagError<-churn.baggingcv$error
+paste("Test Error of  Baging tree model using cross validation  = ", cv.bagError)
+
+```
+
+**Disscussion:**
+Cross validation  approach did not imporve error rate  for bagging model.
+
+
+#Random forest
+##VSA
+
+```{r}
+library(randomForest)
+set.seed(702)
+ranF.adlt = randomForest(incomelevel ~ ., data = train, mtry = 4, ntree = 500,  importance = TRUE)
+ranF.pred = predict(ranF.adlt, test, type = "class")
+ranF.err<-mean(test$incomelevel!= ranF.pred)
+ranF.err
+paste("Test Error of  Random forest tree model  = ", ranF.err)
+
+```
+
+Improtance of variables in model
+
+```{r}
+importance(ranF.adlt)
+```
+
+##crossvalidation approach for random forest 
+I did 5-fold cross validation
+
+```{r}
+set.seed(702)
+trainx<-train[,1:11]
+trainy<-train[,12]
+ranfcv<- rfcv(trainx, trainy, cv.fold=5, scale="log", step=0.5,mtry=function(p) max(1, floor(sqrt(p))), recursive=FALSE)
+RFcverror<-ranfcv$error.cv[1]
+RFcverror
+```
+
+#Boosting method
+##VSA
+
+```{r}
+library(adabag)
+adlt.adaboost <- boosting(incomelevel~., data=train, boos=TRUE, mfinal=3)
+bost.pred<-predict(adlt.adaboost, test)
+bost.pred$error
+```
+
+##CV Approach
+```{r}
+set.seed(702)
+adlt.bost<-boosting.cv(incomelevel~., adult.nlvl, v = 5, boos = TRUE, mfinal = 10,
+     coeflearn = "Breiman", control=rpart.control(cp=0.01), par=FALSE)
+adlt.bost$error
+
+```

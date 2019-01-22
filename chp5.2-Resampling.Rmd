@@ -1,0 +1,779 @@
+---
+title: "chp5.2-Resampling"
+author: "Prakash Paudyal"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+You do not need to include the above statements.
+
+Please do the following problems from the text book ISLR. (use set.seed(702) to replicate your results).
+
+#**1. Question 5.4.1 pg 197**
+Using basic statistical properties of the variance, as well as singlevariable calculus, derive (5.6). In other words, prove that     $\alpha$ given by (5.6) does indeed minimize $Var(\alpha X + (1 −\alpha)Y )$
+ 
+  
+To Minimize the total risk or variance, we will minimize the $Var(\alpha X + (1 − \alpha)Y )$where X and Y are two  random variables.Here, we have  following proporties of variance , those we can use to similify our variaance.
+\[Var(X+Y)=Var(X)+Var(Y)+2 Cov(X,Y) 
+\]
+ \[Var(aX)=a^2 Var(X)
+\]
+\[
+ Cov(aX,bY)=ab Cov(X,Y)
+\]
+
+Then, we can use this formulas to  variance of two random variables 
+\[
+Var(\alpha X + (1 - \alpha)Y)
+= Var(\alpha X) + Var((1 - \alpha) Y) + 2 Cov(\alpha X, (1 - \alpha) Y)
+\]
+
+\[
+= \alpha^2 Var(X) + (1 - \alpha)^2 Var(Y) + 2 \alpha (1 - \alpha) Cov(X, Y)
+\]
+
+\[
+f(\alpha)= \sigma_X^2 \alpha^2 + \sigma_Y^2 (1 - \alpha)^2 + 2 \sigma_{XY} (-\alpha^2 +
+\alpha)
+\]
+To get the minimum value of variance,that is zero, we can take fist darivates of above equation with respect to $\alpha$, which is critical point for value of $\alpha$.
+
+\[ \frac {d} {d\alpha} f(\alpha)=0 \]
+\[ \frac {d} {d\alpha} f(\alpha)=2 \sigma_X^2 \alpha + 2 \sigma_Y^2 (1 - \alpha) (-1) + 2 \sigma_{XY}
+(-2 \alpha + 1)=0
+\]
+\[
+2 \sigma_X^2 \alpha + \sigma_Y^2 (\alpha - 1) + \sigma_{XY} (-2 \alpha + 1)=0
+\]
+\[
+ (\sigma_X^2 + \sigma_Y^2 - 2 \sigma_{XY}) \alpha - \sigma_Y^2 + \sigma_{XY}=0
+\]
+\[\alpha = \frac {\sigma_Y^2 - \sigma_{XY}}
+               {\sigma_X^2 + \sigma_Y^2 - 2 \sigma_{XY}}\]
+
+
+Hence this is the minimum possible value of $\alpha$ to minimize the  given variance  $Var(\alpha X + (1 −\alpha)Y )$
+
+
+#**2. Question 5.4.6 pg 199**
+ 6.We continue to consider the use of a logistic regression model to predict the probability of default using income and balance on the
+ Default data set. In particular, we will now compute estimates for the standard errors of the income and balance logistic regression coefficients in two different ways: (1) using the bootstrap, and (2) using the standard formula for computing the standard errors in the glm() function. Do not forget to set a random seed before beginning your analysis.
+ 
+```{r}
+library(knitr)
+library(ISLR)
+data("Default")
+attach(Default)
+kable(head(Default))
+```
+
+##**(a)** 
+**Using the summary() and glm() functions, determine the estimated standard errors for the coefficients associated with income and balance in a multiple logistic regression model that uses both predictors.**
+
+```{r}
+set.seed(1)
+glm.fit = glm(default ~ income + balance, data = Default, family = "binomial")
+sum1<-summary(glm.fit)
+#kable(summary(glm.fit)$coef)
+#glm.fit$coefficients
+kable(coef(sum1))
+
+```
+
+##**(b)**
+** Write a function, boot.fn(), that takes as input the Default data set as well as an index of the observations, and that outputs  the coefficient estimates for income and balance in the multiple logistic regression model**
+
+```{r,echo=TRUE}
+boot.fn = function(data, index)
+{
+fit<-glm(default ~ income + balance,data = data, family = "binomial", subset = index)
+return(coef(fit))
+}
+#boot.fn(Default,110)
+```
+
+
+
+
+
+
+##**(c)**
+** Use the boot() function together with your boot.fn() function to estimate the standard errors of the logistic regression        coefficients for income and balance.**
+
+```{r}
+library(boot)
+botsm<-boot(Default, boot.fn,100)
+botsm
+botsm$t0
+
+```
+
+Here $t_1$=$\beta_0$ ,$t_2$=$\beta_1$ ,$t_3$=$\beta_2$  and standard error of the logistic regression coefficients for income
+and balance are 0.4239, 4.583 x 10^(-6) and 2.268 x 10^(-4) respectivly 
+
+##**(d) **
+**Comment on the estimated standard errors obtained using the glm() function and using your bootstrap function.**
+
+The standard error obtaind by both method are close to eachother.
+
+#**3. Question 5.4.9 pg 201 **
+  **9. We will now consider the Boston housing data set, from the MASS library.**
+  
+```{r,message=FALSE}
+library(MASS)
+data(Boston)
+attach(Boston)
+kable(head(Boston))
+```
+
+##**(a)** 
+**Based on this data set, provide an estimate for the population mean of medv. Call this estimate $\hat{\mu}$**
+
+```{r}
+mu<-mean(medv)
+mu
+```
+
+$\hat{\mu}$=22.53281
+
+
+##(b)
+**Provide an estimate of the standard error of $\hat{\mu}$. Interpret this result.**
+Hint: We can compute the standard error of the sample mean by dividing the sample standard deviation by the square root of the
+number of observations.
+
+```{r}
+sd.err = sd(medv)/sqrt(length(medv))
+sd.err
+
+```
+
+$\hat{sd.err}$ of $\hat{\mu}$ =0.4088611
+
+The standard error of the mean  provides a rough estimate of the interval in which the population mean is likely to fall.
+The population mean lies in the interval m ± 2SE, where m is sample mean.
+
+##**(c)**
+**Now estimate the standard error of $\hat{\mu}$ using the bootstrap. How does this compare to your answer from (b)?**
+
+```{r}
+set.seed(101)
+boot.fnn <- function(data, index) {
+    mu <- mean(data[index])
+    return (mu)
+}
+botsmp<-boot(medv, boot.fnn, 1000)
+botsmp
+```
+
+The standard error in b)=0.4088611 and by using bootstrap sd.error=0.4025011 which almost similar value.
+
+##**(d)** 
+**Based on your bootstrap estimate from (c), provide a 95% confidence interval for the mean of medv. Compare it to the results    obtained using t.test(Boston$medv).**
+Hint: You can approximate a 95% confidence interval using the formula $\hat{\mu}$ − 2SE($\hat{\mu}$), $\hat{\mu}$+ 2SE($\hat{\mu}$).
+
+
+```{r}
+
+Bootstrap<-c(botsmp$t0 - 2 * 0.4025011, botsmp$t0 + 2 * 0.4025011)
+#Bootstrap
+t.test.estimate<-t.test(Boston$medv)
+t.test<-t.test.estimate$conf.int [1:2]
+#t.test
+#CI<-c("Lower 95%","Upper 95%")
+df<-data.frame(Bootstrap,t.test)
+d1 <- data.frame( t(df))
+names(d1)[1]<-paste("Lower 95%")
+names(d1)[2]<-paste("Upper 95%")
+kable(d1)
+```
+
+Bootstrap estimate for 95% confidence interval is pretty much close  to t.test estimate.
+
+
+
+##**(e)**
+Based on this data set, provide an estimate, $\hat{\mu}_{med}$, for the median value of medv in the population.
+
+
+```{r}
+med.hat <- median(medv)
+med.hat
+```
+
+
+$\hat{\mu}_{med}$= 21.2
+
+
+##**(f)**
+We now would like to estimate the standard error of ˆμmed. Unfortunately,there is no simple formula for computing the standard
+error of the median. Instead, estimate the standard error of the median using the bootstrap. Comment on your findings.
+
+```{r}
+boot.fn2 <- function(data, index) {
+    mu <- median(data[index])
+    return (mu)
+}
+boot(medv, boot.fn2, 1000)
+```
+
+
+Estimated median value is similar to previous one and  standard error is 0.3711245 which is smaller than the mean standard 
+error.
+
+
+##**(g) **
+Based on this data set, provide an estimate for the tenth percentile of medv in Boston suburbs. Call this quantity $\hat{\mu}_{0.1}$
+(You can use the quantile() function.)
+
+```{r}
+medv.tenth = quantile(medv, c(0.1))
+medv.tenth
+```
+
+$\hat{\mu}_{0.1}$=12.75 
+
+
+##**(h) **
+
+Use the bootstrap to estimate the standard error of ˆμ0.1. Comment on your findings.
+
+```{r}
+boot.fn3 <- function(data, index) {
+    mu <- quantile(data[index], c(0.1))
+    return (mu)
+}
+boot(medv, boot.fn3, 1000)
+```
+
+ 
+ The bootstrap estimate of boot quantile is very close to estimates obtaind wiht whole dataset.The standard error is 0.5002952. 
+ Median value is same as abtaind from entire dataset.
+
+##4.
+Last homework you have used different classification methods to analyze the dataset you chose. 
+
+   Now use 
+    i) Validation Set Approach (VSA)
+    ii) LOOCV and 5-fold Cross Validation 
+    
+    to estimate the test error for the following models. Choose the best model based on test error.
+    i) Logistic Regression (or Multinomial Logistic Regression for more than two classes)
+    ii) KNN (choose the best of K)
+    iii) LDA
+    iv) QDA
+    v) MclustDA - best model chosen by BIC
+    vi) MclustDA with modelType="EDDA"
+    vii) Find a new method that we haven't covered in class that can do classification. 
+
+age	workclass	fnlwgt	education	educationnum	maritalstatus	occupation	relationship	race	sex	capitalgain	capitalloss	hourspweek	nativecountry	income
+
+
+Summarize the results in a table form (See below). \textbf{Do NOT} show your summary directly from the code. Report only the important information as figures or tables. If you can't perform any of the analysis mentioned above, write the reason why. Write a discussion and draw conclusions in the context of the original problem from your analysis. (The following table could be used, other options would be the kable() command in the knitr library, or using inline code)
+		
+\begin{center}
+	\begin{tabular}{| l || l | l | l |}
+		\hline 
+		&
+		 \multicolumn{3}{|c|}{Test Error}  \\
+		\hline
+		Method & VSA &LOOCV & 5-Fold CV \\ \hline\hline
+		Logistic Reg & 0.1793391 & 0.1873464 & 0.1219478 \\ \hline
+		KNN & 0.2428449& 0.3593366 & 0.2909104\\ \hline
+		LDA & 0.1770053 & 0.2168305 &0.2194654  \\
+		\hline
+		QDA &0.2154526 &0.213145 & 0.2096682\\
+		\hline
+		MclustDA &0.2117676 & & 0.2307535\\
+		\hline
+		MclustDA (EDDA) &0.2067314 & & 0.2027846\\
+		\hline 
+		SVM &0.0002456701 &0.001228501&0.0002047502 \\
+		\hline
+		
+	\end{tabular}
+\end{center}		
+
+Out of all the algorithms that I experimented with, the best result (i.e. least value for test error) was obtained for 5 fold cross-validation in SVM. 	The test error for VSA technique using SVM is very close to our best result. MclustDA and MclustDA (EEDA) did not run as I kept on getting an error saying that some of the variables in our dataset appeared to be constant within groups.
+
+
+
+#Details work of Q4
+
+##Import the data from a url
+https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+
+```{r}
+theUrl<-"https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
+adult.data<- read.table(file = theUrl, header = FALSE, sep = ",", 
+                    strip.white = TRUE, stringsAsFactors = TRUE,
+                    col.names=c("age","workclass","fnlwgt","education","educationnum","maritalstatus",                      "occupation","relationship","race","sex","capitalgain","capitalloss", "hoursperweek","nativecountry","income")
+                    )
+```
+
+
+```{r}
+Url<-"https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test"
+adult.test<- read.table(file = Url, header = FALSE, sep = ",", 
+                    strip.white = TRUE, stringsAsFactors = TRUE,skip = 1,
+                    col.names=c("age","workclass","fnlwgt","education","educationnum","maritalstatus",                      "occupation","relationship","race","sex","capitalgain","capitalloss", "hoursperweek","nativecountry","income")
+                    )
+```
+```{r}
+str(adult.data)
+names(adult.data)
+```
+```{r}
+adult.data1 <- rbind(adult.data, adult.test)
+
+
+```
+
+There are some categorical variables where the missing levels are coded as ? and there are more than 10 levels for some categorical variables. Hence we will relevels some of catogorical variable to reduce the number of levels and replace the level ? by misslevel.
+
+#Data preprocessing (collapse the factor levels & re-coding)
+
+```{r}
+levels(adult.data$workclass)<- c("misLevel","FedGov","LocGov","NeverWorked","Private","SelfEmpNotInc","SelfEmpInc","StateGov","NoPay")
+
+ levels(adult.data$education)<- list(presch=c("Preschool"), primary=c("1st-4th","5th-6th"),upperprim=c("7th-8th"), highsch=c("9th","Assoc-acdm","Assoc-voc","10th"),secndrysch=c("11th","12th"), graduate=c("Bachelors","Some-college"),master=c("Masters"), phd=c("Doctorate"))
+
+levels(adult.data$maritalstatus)<- list(divorce=c("Divorced","Separated"),married=c("Married-AF-	spouse","Married-civ-spouse","Married-spouse-absent"),notmarried=c("Never-married"),widowed=c("Widowed"))
+
+levels(adult.data$occupation)<- list(misLevel=c("?"), clerical=c("Adm-clerical"), lowskillabr=c("Craft-repair","Handlers-cleaners","Machine-op-inspct","Other-service","Priv-house-	serv","Prof-specialty","Protective-serv"),highskillabr=c("Sales","Tech-support","Transport-moving","Armed-Forces"),agricultr=c("Farming-fishing"))
+
+levels(adult.data$relationship)<- list(husband=c("Husband"), wife=c("Wife"), outofamily=c("Not-in-family"),unmarried=c("Unmarried"), relative=c("Other-relative"), ownchild=c("Own-child"))
+
+levels(adult.data$nativecountry)<- list(misLevel=c("?","South"),SEAsia=c("Vietnam","Laos","Cambodia","Thailand"),Asia=c("China","India","HongKong","Iran","Philippines","Taiwan"),NorthAmerica=c("Canada","Cuba","Dominican-Republic","Guatemala","Haiti","Honduras","Jamaica","Mexico","Nicaragua","Puerto-Rico","El-Salvador","United-States"), SouthAmerica=c("Ecuador","Peru","Columbia","Trinadad&Tobago"),Europe=c("France","Germany","Greece","Holand-Netherlands","Italy","Hungary","Ireland","Poland","Portugal","Scotland","England","Yugoslavia"),PacificIslands=c("Japan","France"),Oceania=c("Outlying-US(Guam-USVI-etc)"))
+str(adult.data)
+```
+
+#Summarize all data sets 
+
+```{r}
+#summary  (adult.data [!complete.cases(adult.data),])
+summary  (adult.data)
+```
+
+```{r,include=FALSE}
+table (complete.cases (adult.data))
+
+```
+
+
+#cleaning data with NAs
+We again see that independent variables education,maritalstatus,occupation,nativecountry have  11077,23 ,4215,20 missing value  respecively. Here I imputed missed values using missForest.
+
+```{r,message=FALSE}
+# Missing data treatment
+ library(missForest)
+ imputdata<- missForest(adult.data) 
+# check imputed values
+#imputdata$ximp
+# assign imputed values to a data frame
+adult.cmplt<- imputdata$ximp
+```
+
+```{r}
+par(mfrow=c(1,2))
+
+boxplot (age ~ income, data = adult.cmplt, 
+     main = "Age distribution for different income levels",
+     xlab = "Income Levels", ylab = "Age", col = "green")
+boxplot (hoursperweek ~ income, data = adult.cmplt, 
+     main = "More work hours, more income",
+     xlab = "Income Levels", ylab = "Hours per week", col = "green")
+
+
+qplot(income, data = adult.cmplt, fill = occupation,main="Income and occupation") + facet_grid (. ~ occupation)
+qplot(income, data = adult.cmplt, fill = education,main="Income and education") + facet_grid (. ~ education)
+qplot(income, data = adult.cmplt, fill = relationship,main="income and relationship") + facet_grid (. ~ race)
+
+```
+
+```{r}
+adult.cmplt.norm<- adult.cmplt
+ adult.cmplt.norm[,1:3]<- log(adult.cmplt[1:3],2) # where 2 is log base 2
+ adult.cmplt.norm$capitalgain<- NULL
+adult.cmplt.norm$capitalloss<-NULL
+ correlat<- cor(adult.cmplt.norm[c(1:4)])
+corrplot(correlat, method = "pie")
+highlyCor <- colnames(adult.cmplt)[findCorrelation(correlat, cutoff = 0.7, verbose = TRUE)]
+#All correlations <= 0.7 
+highlyCor # No high Correlations found
+character(0)
+```
+
+
+
+
+
+##split the data into 75:25 ratio.
+
+
+```{r}
+## 75% of the sample size
+set.seed(705)
+adult.cmplt$income1 <- ifelse(adult.cmplt$income=="<=50K", 0,1)
+#Auto$mpg01 <- ifelse(Auto$mpg>median(Auto$mpg),1,0)
+adult.cmplt$income1<-factor(adult.cmplt$income1)
+smp_size <- floor(0.75 * nrow(adult.cmplt))
+## set the seed to make partition reproductible
+train_ind <- sample(seq_len(nrow(adult.cmplt)), size = smp_size)
+
+train <- adult.cmplt[train_ind, ]
+test <- adult.cmplt[-train_ind, ]
+```
+
+#(i). Validation Set Approach (VSA)
+ 
+ significant predictors are age, workclassSelfEmpInc,fnlwgt,educationnum and maritalstatusmarried. As for the statistical significant   variables, age and educationnum has the lowest p value suggesting a strong association with the response, income
+
+
+```{r}
+#glm.fit<- glm(income~., family=binomial(link='logit'),data = train)
+#summary(glm.fit)
+glm.fit<- glm(income1 ~ age + workclass + educationnum + fnlwgt + maritalstatus, family=binomial(link='logit'),data = train)
+glm.pred<- predict(glm.fit, test, type = "response")
+p_class <- ifelse(glm.pred > .50, 1, 0) 
+glmerror<-mean(p_class!= test$income1)
+glmerror
+```
+
+
+#KNN
+```{r,include=TRUE,warning=F,message=FALSE}
+library(class)
+attach(adult.cmplt)
+train.X1 = cbind(age , workclass , educationnum , fnlwgt , maritalstatus)[ train_ind, ]
+test.X1 = cbind(age , workclass , educationnum , fnlwgt , maritalstatus)[ -train_ind, ]
+train.income = income1[train_ind]
+
+```
+
+```{r}
+set.seed(1)
+#Function for choosing k in knn
+misclassknn <- function(train, test, 
+                        response.train, response.test, Kmax){ 
+  K <- 1:Kmax
+  misclass <- numeric(Kmax)
+  for( k in K){
+    knn.pred <- knn(train,test,response.train, k=k)
+    misclass[k] <- mean(knn.pred!=response.test)
+  }
+  #plot(c(1,Kmax), c(0.4,0.6), type = "n" )
+  #points(1:Kmax, misclass, type = "b", pch =16)
+  return(list(K = Kmax, misclass = misclass, 
+              Kmin = which.min(misclass)))
+}
+
+misclassknn(train.X1, test.X1, train.income, test$income1, 100)
+```
+
+**At k=33 , knn gives less miss classification error**
+
+```{r}
+knn.pred <- knn(train.X1,test.X1,train.income, k=33)
+knn.error <- mean(knn.pred!=test$income1)
+knn.error
+```
+
+#LDA
+
+```{r}
+library(MASS)
+lda.fit <- lda(income1 ~ age + workclass + educationnum + fnlwgt + maritalstatus, data=train)
+#lda.fit
+pred.lda <- predict(lda.fit, test)
+#table(Predected=pred.lda$class, Actual=test$income1)
+lda.error<-mean(pred.lda$class != test$income1)
+lda.error
+```
+
+#QDA
+QDA did not accept catogorical  explanatory variables. I think qda assumes real values (and not factors) in the explanatory 
+variables. Hence I removemed  these variables from fromula to run the  QDA function.
+(+ workclass + maritalstatus)
+
+```{r,include=TRUE}
+library(MASS)
+qda.fit <- qda(income1 ~ age  + educationnum + fnlwgt , data=train)
+pred.qda <- predict(qda.fit, test)
+qda.error<-mean(pred.qda$class != test$income1)
+qda.error
+
+```
+
+#Mclust
+```{r,message=FALSE}
+library(mclust)
+attach(adult.cmplt)
+MTrain = cbind(age , workclass , educationnum , fnlwgt , maritalstatus)[ train_ind, ]
+MTest = cbind(age , workclass , educationnum , fnlwgt , maritalstatus)[ -train_ind, ]
+MTrainClass = income1[train_ind]
+MTestClass = income1[-train_ind]
+
+fit.MclustDA <- MclustDA(MTrain, MTrainClass)
+preds22 = predict.MclustDA(fit.MclustDA,newdata=MTest)
+Mclust.Error<-mean(MTestClass!=preds22$classification) #gives the Test Error that matches the confusion matrix.
+Mclust.Error
+```
+
+
+```{r}
+
+
+fit1.MclustDA <- MclustDA(MTrain, MTrainClass,modelType = "EDDA")
+preds2 = predict.MclustDA(fit1.MclustDA,newdata=MTest)
+MclustEDDA.Error<-mean(MTestClass!=preds2$classification) #gives the Test Error that matches the confusion matrix.
+MclustEDDA.Error
+```
+
+#LOOCV Approach
+##GLM 
+I Used the for loop to split the data in 1:n-1 ratio.
+
+```{r}
+set.seed(390)
+smp_size1 <- floor(0.05 * nrow(adult.cmplt))
+## set the seed to make partition reproductible
+train_ind1 <- sample(seq_len(nrow(adult.cmplt)), size = smp_size1)
+smdata<-adult.cmplt[train_ind1,]
+error <- rep(0, dim(smdata)[1])
+for (i in 1:dim(smdata)[1]) {
+  loocv.glm <- glm(income1 ~ age  + educationnum + fnlwgt + maritalstatus, data = smdata[-i, ],  family = "binomial")
+  pred.up <- predict.glm(loocv.glm, smdata[i, ], type = "response") > 0.5
+  true.up <- smdata[i, ]$income1 == "1"
+  if (pred.up != true.up)
+    error[i] <- 1
+}
+loocv.gkmerror<-mean(error)
+loocv.gkmerror
+```
+
+##LDA
+
+ I removed  + maritalstatus+ workclass  variables from the model because it was shoiwing ,
+Error in lda.default(x, grouping, ...) : 
+  variable 14 appears to be constant within groups
+  I tried to explore about this error but could reach final conculusion about why this error show up.
+  
+```{r}
+#########LOOCV##############
+
+error1 <- rep(0, dim(smdata)[1])
+for (i in 1:(dim(smdata)[1])) {
+  fit2.lda <- lda(income1 ~ age  + educationnum + fnlwgt , data = smdata[-i,])
+  pred.1 <- predict(fit2.lda, newdata = smdata[i,]) 
+  if (pred.1$class != smdata$income1[i]) 
+      error1[i] = 1
+}
+loocv.lda <- sum(error1)/dim(smdata)[1]
+loocv.lda
+```
+
+##QDA-LOOCV
+
+```{r}
+#########LOOCV##############
+
+error11 <- rep(0, dim(smdata)[1])
+for (i in 1:(dim(smdata)[1])) {
+  fit2.qda <- qda(income1 ~ age  + educationnum + fnlwgt , data = smdata[-i,])
+  pred.11 <- predict(fit2.qda, newdata = smdata[i,]) 
+  if (pred.11$class != smdata$income1[i]) 
+      error11[i] = 1
+}
+loocv.qda <- sum(error11)/dim(smdata)[1]
+loocv.qda
+```
+
+##KNN-LOOCV
+
+
+
+```{r}
+
+#########LOOCV##############
+train.X11 = cbind(age , workclass , educationnum , fnlwgt , maritalstatus)[ train_ind1, ]
+test.X11 = cbind(age , workclass , educationnum , fnlwgt , maritalstatus)[ -train_ind1, ]
+train.income1 = income1[train_ind1]
+test.income1=income1[-train_ind1]
+error151 <- rep(0, dim(train.X11)[1])
+for(i in 1:(dim(train.X11)[1])) {
+  knn.pred1 <- knn(train.X11[-i,] ,test.X11[i,], train.income1[-i], k=2)
+if(knn.pred1!=test.income1[i])
+  error151[i] = 1
+}
+loocv.knn <- mean(error151)
+loocv.knn
+```
+
+##mclust-loocv
+
+
+
+
+
+#5-Fold
+##glm
+
+```{r}
+set.seed (17)
+cv.error.5= rep (0 ,5)
+for (i in 1:5) {
+glm.fit=glm(income1 ~ age + workclass + educationnum + fnlwgt + maritalstatus, family=binomial(link='logit'),data = adult.cmplt)
+cv.error.5[i]=cv.glm (adult.cmplt ,glm.fit ,K=5) $delta [1]
+ }
+ mean(cv.error.5)
+```
+
+##KNN (choose the best of K)
+
+```{r,message=FALSE}
+library(caret)
+trControl <- trainControl(method = "cv", number = 5)
+fit <- train(income1 ~ ., method = "knn", tuneGrid = expand.grid(k = 1:5), trControl = trControl, metric = "Accuracy", data = smdata)
+erKNN1<-(1-sum(0.6891798 + 0.6627730+0.7334120+0.7235904+0.7364927)/5)
+erKNN1
+```
+
+
+## LDA
+```{r}
+cv.lda <-
+ function (data, model=origin~., yname="origin", K=10, seed=123) {
+   n <- nrow(data)
+   set.seed(seed)
+   datay=data[,yname] #response variable
+   library(MASS)
+   #partition the data into K subsets
+   f <- ceiling(n/K)
+   s <- sample(rep(1:K, f), n)  
+   #generate indices 1:10 and sample n of them  
+   # K fold cross-validated error
+   
+   CV=NULL
+   
+   for (i in 1:K) { #i=1
+     test.index <- seq_len(n)[(s == i)] #test data
+     train.index <- seq_len(n)[(s != i)] #training data
+     
+     #model with training data
+     lda.fit=lda(model, data=data[train.index,])
+     #observed test set y
+     lda.y <- data[test.index, yname]
+     #predicted test set y
+     lda.predy=predict(lda.fit, data[test.index,])$class
+     
+     #observed - predicted on test data
+     error= mean(lda.y!=lda.predy)
+     #error rates 
+     CV=c(CV,error)
+   }
+   #Output
+   list(call = model, K = K, 
+        lda_error_rate = mean(CV), seed = seed)  
+ }
+
+er_lda=cv.lda(data=adult.cmplt,model=income1 ~ age  + educationnum + fnlwgt, yname="income1", K=5, seed=123)
+er_lda$lda_error_rate
+```
+
+
+## QDA
+```{r}
+cv.qda <-
+ function (data, model=origin~., yname="origin", K=10, seed=123) {
+   n <- nrow(data)
+   set.seed(seed)
+   datay=data[,yname] #response variable
+   library(MASS)
+   #partition the data into K subsets
+   f <- ceiling(n/K)
+   s <- sample(rep(1:K, f), n)  
+   #generate indices 1:10 and sample n of them  
+   # K fold cross-validated error
+   
+   CV=NULL
+   
+   for (i in 1:K) { #i=1
+     test.index <- seq_len(n)[(s == i)] #test data
+     train.index <- seq_len(n)[(s != i)] #training data
+     
+     #model with training data
+     qda.fit=qda(model, data=data[train.index,])
+     #observed test set y
+     qda.y <- data[test.index, yname]
+     #predicted test set y
+     qda.predy=predict(qda.fit, data[test.index,])$class
+     
+     #observed - predicted on test data
+     error= mean(qda.y!=qda.predy)
+     #error rates 
+     CV=c(CV,error)
+   }
+   #Output
+   list(call = model, K = K, 
+        qda_error_rate = mean(CV), seed = seed)  
+ }
+er_qda=cv.qda(data=adult.cmplt,model=income1 ~ age  + educationnum + fnlwgt , yname="income1", K=5, seed=123)
+er_qda$qda_error_rate
+```
+
+## MclustDA - best model chosen by BIC
+
+```{r}
+fit.MclustDA <- MclustDA(MTrain, MTrainClass)
+cv.mclust1<-cvMclustDA(fit.MclustDA, nfold = 5)
+er<-cv.mclust1[c("error")]
+er
+```
+
+##MclustDA with modelType=“EDDA
+```{r}
+fit1.MclustDA <- MclustDA(MTrain, MTrainClass,modelType = "EDDA")
+cv1.mclst1<-cvMclustDA(fit1.MclustDA, nfold = 5)
+er1<-cv1.mclst1[c("error")]
+er1
+```
+
+#Fit a Support Vector Machine (SVM) classification model
+##Validation Set Approach (VSA)
+```{r}
+library(e1071)
+svm.model<- svm(income1~., data = train,kernel = "radial", cost = 1, gamma = 0.1)
+svm.predict <- predict(svm.model, test)
+svm.error<-mean(svm.predict != test$income1)
+svm.error
+#confusionMatrix(test.data$income, svm.predict) # 87% accuracy
+```
+##LOOCV
+```{r}
+library(e1071)
+svm.modelCV<- tune.svm(income1~., data = smdata,kernel = "radial", cost = 1, gamma = 0.1,tunecontrol=tune.control(cross = 1628))
+summary(svm.modelCV)
+```
+
+
+##5-fold Cross Validation
+
+```{r}
+library(e1071)
+svm.model1<- tune.svm(income1~., data = train,kernel = "radial", cost = 1, gamma = 0.1,tunecontrol=tune.control(cross = 5))
+#svm.predict <- predict(svm.model, test)
+#svm.error<-mean(svm.predict != test$income1)
+#svm.error
+#confusionM
+summary(svm.model1)
+```
+

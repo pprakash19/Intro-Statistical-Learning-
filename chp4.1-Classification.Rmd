@@ -1,0 +1,235 @@
+---
+title: "chp4.1-Classification"
+author: "Prakash Paudyal"
+date: "Jan 4 , 2018"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+# Due February 6th
+
+
+Answer all questions specified on the problem but if you see something interesting and want to do more analysis please report it as well. Don't forget to include discussion.
+
+Submit your \textbf{.rmd} file with the knitted \textbf{PDF} (or knitted Word Document saved as a PDF). If you are still having trouble with .rmd, let us know and we will help you, but both the .rmd and the PDF are required.
+
+This file can be used as a skeleton document for your code/write up. Please follow the instructions found under Content titled Format+STAT-702+HW. 
+
+For any question asking for plots/graphs, please do as the question asks as well as do the same but using the respective commands in the GGPLOT2 library. (So if the question asks for one plot, your results should have two plots. One produced using the given R-function and one produced from the GGPLOT2 equivalent)
+
+You do not need to include the above statements.
+
+Please do the following problems from the text book ISLR.
+
+$$1. Question 4.7.1 pg 168$$
+
+ Using a little bit of algebra, prove that (4.2) is equivalent to (4.3). In  other words, the logistic function  
+ representation and logit representation  for the logistic regression model are equivalent.
+ 
+$$ 
+We\ have\ given\ equation\ 4.2\ is\ [p(X) = \frac{e^{\beta_0 + \beta_1 X}}{1 + e^{\beta_0 + \beta_1 X}} \Leftrightarrow e^{\beta_0 + \beta_1 X}(1 - p(X)) = p(X),] which\ is\ equivalent\ to\ [\frac{p(X)}{1 - p(X)} = e^{\beta_0 + \beta_1 X}.] that\ is\ equation\ 4.3\ 
+$$
+
+
+
+
+$$**2. Question 4.7.10(a-d) pg 171**$$
+   
+   10. This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar     in nature to the Smarket data from this chapter's lab, except that it contains 1, 089 weekly returns for 21 years, from     the beginning of 1990 to the end of 2010.
+   
+(a) Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns?
+
+
+```{r,include=T,warning=F,message=F}
+
+library(ISLR)
+data(Weekly)
+summary(Weekly)
+cor(Weekly[, -9])
+plot(Weekly,col=4)
+#pairs(Weekly)
+```
+
+##ggplot
+
+```{r,warning=F,message=F}
+library(ggplot2)
+library(GGally)
+ggpairs(Weekly, aes(colour = Direction, alpha = 0.2))
+```
+**comment**
+From the  correlation table and scaterplot matrix, we can see that variable "year" has coorelation with vaolume .Volume is increasing over the year.Pirwaise plot and correlaton table indicate that all previous week returns (lags) do not show any correlation with other variables.Today's rate of return also does not show any correlations
+
+
+(b) Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so,which ones?
+
+## Fit a model
+
+```{r}
+glm.fit <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data=Weekly, family="binomial")
+summary(glm.fit)
+
+```
+**comment**
+lag2 is the only significant predictor for direction with less p-value at 5% confidence level.
+
+(c) Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+
+```{r}
+ library(caret)
+ #contrasts(Weekly$Direction)#// to check level
+ #predicted probabilities
+ p <- predict(glm.fit, type = "response")
+# Turn probabilities into classes and look at their frequencies
+ p_class <- ifelse(p > .50, "Up", "Down") 
+  # Make simple 2-way frequency table
+ (mat<-table(p_class, Weekly[["Direction"]]))
+ #Use caret's helper function to calculate additional statistics
+ #confusionMatrix(p_class, Weekly[["Direction"]])
+(correct<-(mat[1]+mat[4])/1089)
+```
+**comment**
+The confusion matrix tells us,model's correct prediction fraction **(54+557) / (total no of obs)** that is 56.11%.
+The table reveals that Logestic model predicted (430+557)=987 times rate of return will go up.Of those, 557 went up
+but 430 of them went down. Hence 430 out of 484 were incorrectly labled (88.8%). 
+when actual value is going up ,**557/(48+557)557/(48+557) )=92% ** of times prediction was correct.
+when actual value is going down,**(54/(54+430)54/(54+430))=11.1%** of times prediction was correct.
+
+
+(d) Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r}
+library(caret)
+TrainSet <- subset(Weekly, Year <= 2008, select = c(Year,Lag2,Direction) )
+TestSet <- subset(Weekly, Year > 2008, select = c(Year,Lag2,Direction) )
+ #Confirm test set size
+ #nrow(TrainSet) / nrow(Weekly)
+ glm.Train <- glm(Direction ~  Lag2 , data=TrainSet, family="binomial")
+#summary(glm.Train)
+ prob <- predict(glm.Train,TestSet,type = "response")
+# Turn probabilities into classes and look at their frequencies
+ p_class1 <- ifelse(prob > .50, "Up", "Down") 
+ confusionMatrix(p_class1, TestSet[["Direction"]])
+
+```
+
+###correct predection fraction , Accuracy : 0.625          
+
+
+3. Question 4.7.11(a,b,c,f) pg 172
+11. In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.
+(a) Create a binary variable, mpg01, that contains a 1 if mpg contains a value above its median, and a 0 if mpg contains a value below its median. You can compute the median using the median() function. Note you may find it helpful to use the
+data.frame()function to create a single data set containing both mpg01 andthe other Auto variables.
+
+```{r}
+library(MASS)
+data(Auto)
+head(Auto)
+med <- median(Auto$mpg)
+mpg01 <-ifelse(Auto$mpg > med, 1,0)
+auto<-data.frame(Auto,mpg01)
+auto$mpg01<-factor(auto$mpg01)
+```
+
+(b) Explore the data graphically in order to investigate the association between mpg01 and the other features. Which of the other features seem most likely to be useful in predicting mpg01? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+
+```{r}
+pairs(auto)
+#boxplot()
+par(mfrow = c(2,2))
+for(i in 1:(ncol(auto)-2)){
+        boxplot(auto[,i] ~ as.factor(auto$mpg01),
+                xlab = "Gas Mileage (0:Low, 1:High)",
+                ylab = colnames(auto)[i],
+                col = c("lightblue","green"))
+        
+}
+```
+
+From the bar polt we can see gas mileage hase positive and negetive correlation with most of the variables.
+I would chose year, weight,displacement and horsepower
+
+#ggplot 
+
+```{r}
+library(ggplot2)
+library(GGally)
+Auto1<-auto[-9]
+ggpairs(Auto1)
+par(mfrow = c(2,2))
+ggplot(Auto1,aes(mpg01,cylinders))+geom_boxplot(fill="Light green")+ggtitle("cylinders vs mpg01")
+ggplot(Auto1,aes(mpg01,displacement))+geom_boxplot(fill="Light green")+ggtitle("dispacement vs mpg01")
+#ggplot(Auto,aes(mpg01,displacement))+geom_point(fill="red")+ggtitle("dispacement vs mpg01")
+ggplot(Auto1,aes(mpg01,weight))+geom_boxplot(fill="Light green")+ggtitle("weight vs mpg01")
+ggplot(Auto1,aes(mpg01,acceleration))+geom_boxplot(fill="Light green")+ggtitle("acceleration vs mpg01")
+ggplot(Auto1,aes(mpg01,year))+geom_boxplot(fill="Light green")+ggtitle("year vs mpg01")
+ggplot(Auto1,aes(mpg01,origin))+geom_boxplot(fill="Light green")+ggtitle("origin vs mpg01")
+
+```
+
+ 
+(c) Split the data into a training set and a test set.
+
+```{r}
+# Randomly order the dataset
+rows <- sample(nrow(auto))
+ auto <- auto[rows, ]
+# Find row to split on
+ split <- round(nrow(auto) * .75)
+ train <- auto[1:split, ]
+ test <- auto[(split + 1):nrow(auto), ]
+# Confirm test set size
+ nrow(train) / nrow(auto)
+ 
+```
+I splited the data in 75:25 ratio
+
+(f) Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+```{r,include=T,warning=F,message=F}
+glm.fit2 <- glm(mpg01 ~ displacement+horsepower+weight+year, data=train, family="binomial")
+ prob2 <- predict(glm.fit2, test, type = "response")
+# Turn probabilities into classes and look at their frequencies
+ p_class2 <- ifelse(prob2 > .50, "1", "0") 
+ table(p_class2, test$mpg01)
+ #confusionMatrix(p_class2, test[["mpg01"]])
+ #round(sum(p_class2!=test$mpg01)/nrow(test)*100,2)
+ mean(p_class2 != test$mpg01)
+ #summary(glm.fit2)
+
+```
+
+##Test Error for the model is 0.08163265
+
+4. Write a function in RMD that calculates the misclassification rate, sensitivity, and specificity. The inputs for this function are a cutoff point, predicted probabilities, and original binary response. (Post any questions you might have regarding this on the discussion board.) (Needs to be an actual function you create, using the function() command, not just a chunk of code.)
+
+```{r,include=T,warning=F,message=F,echo=TRUE}
+error_function<-function(p,o,cutoff=0.5)
+{
+  pred_class <- ifelse(p > .50, "1", "0") 
+  # Make simple 2-way frequency table
+ confusion1<-table(pred_class, o)
+
+ TP <- confusion1[2, 2]
+ TN <-confusion1[1, 1]
+ FP <- confusion1[2, 1]
+ FN <- confusion1[1, 2]
+ misclassificationrate<-mean(pred_class!=o)
+ #misclassificationrate<-(FP + FN) / (TP + TN + FP + FN)
+ #glm.sensitivity1 = round(length(which(pred_class == "1" & o == "1"))/length(which(o == "1"))*100,2)
+ sensitivity <-TP / (FN + TP)
+ specificity <-TN / (TN + FP)
+return(list(misclassificationrate=misclassificationrate,sensitivity=sensitivity,specificity=specificity,confusion1))
+
+}
+error_function(prob2,test$mpg01, 0.5)
+
+```
+
+
+

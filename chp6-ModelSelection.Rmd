@@ -1,0 +1,468 @@
+---
+title: "Homework 8"
+author: "chp6-ModelSelection"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  word_document: default
+---
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+Please do the following problems from the text book ISLR. 
+
+#1. Question 6.8.4 pg 260
+4.Suppose we estimate the regression coefficients in a linear regression model by minimizing 
+\[
+\sum_{i=1}^n\Biggl(y_i - \beta_0 - \sum_{j=1}^p\beta_jx_{ij}\Biggr) - \lambda\sum_{j=1}^p\beta_j^2
+\]
+for a particular value of λ. For parts (a) through (e), indicate which of i. through v. is correct. Justify your answer.
+
+##(a) 
+As we increase $\lambda$ from 0, the training RSS will:
+i. Increase initially, and then eventually start decreasing in an
+inverted U shape.
+ii. Decrease initially, and then eventually start increasing in a U shape.
+iii. Steadily increase.
+iv. Steadily decrease.
+v. Remain constant.
+
+**ANS**
+(iii)Steadily increase. 
+As tuning parameter $\lambda$ increse from 0, the impact of the shrinkage penalty grows, and the ridge regression coefficient
+estimates will approach zero which eventually steadily increase training RSS
+
+##(b)
+Repeat (a) for test RSS.
+
+**ANS**
+
+(ii.) Decrease initially, and then eventually start increasing in a U shape.
+When $\lambda$=0, all $\beta$'s have their least square estimate values. In this case, the model tries to fit hard to training data
+and hence test RSS is high. As we increase$\lambda$, beta’s start reducing to zero and some of the overfitting is reduced. Thus,
+test RSS initially decreases. Eventually by inccreasing $\lambda$, as beta's approach 0, the model becomes too simple and test RSS 
+increases, making a U shape.
+
+##(c) 
+Repeat (a) for variance.
+
+**ANS**
+
+(iv.) Steadily decrease.
+As $\lambda$ increases, the flexibility of the ridge regression fit decreases,leading to decreased variance.As we increase$\lambda$, $\beta$s start decreasing and model becomes simpler. In the limiting case of$\lambda$ approaching infinity, all betas reduce to zero
+and model predicts a constant and has no variance.
+
+##(d) 
+Repeat (a) for (squared) bias.
+
+**ANS**
+
+iii) Steadily increases:
+As $\lambda$ increases, the flexibility of the ridge regression fit decreases,leading to  increased bias.
+When $\lambda$=0,$\beta$s have their least-square estimate values and hence have the least bias. As$\lambda$ increases,$\beta$s start
+reducing towards zero, the model fits less accurately to training data and hence bias increases. In the limiting case of$\lambda$ approaching infinity, the model predicts a constant and hence bias is maximum
+
+##(e) 
+Repeat (a) for the irreducible error.
+
+**ANS**
+
+v) Remains constant:
+ By definition, irreducible error is model independent and hence irrespective of the choice of $\lambda$, remains constant.
+
+
+#2. Question 6.8.9 pg 263
+9. In this exercise, we will predict the number of applications received using the other variables in the College data set.
+
+```{r}
+library(knitr)
+library(ISLR)
+data(College)
+str(College)
+kable(head(College))
+
+```
+
+##(a)
+Split the data set into a training set and a test set.
+
+```{r,echo=TRUE}
+set.seed(11)
+smp_size <- floor(0.50 * nrow(College))
+train_ind <- sample(seq_len(nrow(College)), size = smp_size)
+train.college<-College[train_ind, ]
+test.college <- College[-train_ind, ]
+```
+
+I splitied data into 50%
+
+##(b) 
+Fit a linear model using least squares on the training set, and report the test error obtained.
+
+ Linear model coefficients
+ 
+```{r}
+fit.lm <- lm(Apps ~ ., data = train.college)
+sum1<-summary(fit.lm)
+kable(sum1$coefficients)
+pred.lm <- predict(fit.lm, test.college)
+
+```
+
+Test Error for Linear model
+
+```{r}
+lm.MSE<-mean((pred.lm - test.college$Apps)^2)
+lm.MSE
+```
+
+The mean squared error,TEST MSE is $ lm_{MSE}$=1538442, which is extremely large.
+
+
+##(c)
+Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+
+```{r}
+set.seed(12)
+library(glmnet)
+train.mat <- model.matrix(Apps ~ ., data = train.college)
+test.mat <- model.matrix(Apps ~ ., data = test.college)
+grid <- 10 ^ seq(4, -2, length = 100)
+fit.ridge <- glmnet(train.mat, train.college$Apps, alpha = 0, lambda = grid, thresh = 1e-12)
+cv.ridge <- cv.glmnet(train.mat, train.college$Apps, alpha = 0, lambda = grid, thresh = 1e-12)
+
+```
+
+ Best λ chosen by cross-validation is
+ 
+```{r}
+bestlam.ridge <- cv.ridge$lambda.min
+bestlam.ridge
+```
+
+
+Test error for ridge regression model
+
+```{r}
+pred.ridge <- predict(fit.ridge, s = bestlam.ridge, newx = test.mat)
+mean((pred.ridge - test.college$Apps)^2)
+```
+
+
+The mean squared error,TEST MSE is $ ridge_{MSE}$=1608859 which is slightly higher than test error of linear model.
+
+
+##(d) 
+Fit a lasso model on the training set, with λ chosen by crossvalidation. Report the test error obtained, along with the number
+of non-zero coefficient estimates.
+
+Best λ chosen by cross-validation is
+
+```{r}
+set.seed(13)
+fit.lasso <- glmnet(train.mat, train.college$Apps, alpha = 1, lambda = grid, thresh = 1e-12)
+mod.lasso = cv.glmnet(train.mat, train.college$Apps, alpha=1, lambda=grid, thresh=1e-12)
+lambda.best = mod.lasso$lambda.min
+lambda.best
+```
+
+Test error for lasso  model
+
+```{r}
+lasso.pred = predict(mod.lasso, newx=test.mat, s=lambda.best)
+mean((test.college$Apps - lasso.pred)^2)
+```
+
+Number of non-zero coefficient estimates are 15. LASSO reduced the coefficent of F.Undergrad and Books to zero.
+
+```{r}
+mod.lasso = glmnet(model.matrix(Apps~., data=College), College[, "Apps"], alpha=1)
+predict(mod.lasso, s=lambda.best, type="coefficients")
+```
+
+
+##(e)
+Fit a PCR model on the training set, with M chosen by crossvalidation.Report the test error obtained, along with the value
+of M selected by cross-validation.
+
+
+Value of M selected by cross-validation.
+
+```{r}
+set.seed(102)
+library(pls)
+fit.pcr <- pcr(Apps ~ ., data = train.college, scale = TRUE, validation = "CV")
+validationplot(fit.pcr, val.type = "MSEP")
+summary(fit.pcr)# #lowest at M=17
+#fit.pcr$ncomp
+```
+
+
+We see that the smallest cross-validation error occurs when M = 17 components are used
+Hence ,M selected by cross-validation is 17, which amounts to simply performing least squares, because when all of the components are
+used in PCR no dimension reduction occurs. 
+
+
+Test error
+
+```{r}
+pred.pcr <- predict(fit.pcr, test.college, ncomp = 17)
+mean((pred.pcr - test.college$Apps)^2)
+```
+
+The mean squared error,TEST MSE is $ pcr_{MSE}$=1538442.
+
+##(f)
+Fit a PLS model on the training set, with M chosen by crossvalidation.Report the test error obtained, along with the value
+of M selected by cross-validation.
+
+```{r}
+set.seed(16)
+pls.fit = plsr(Apps~., data=train.college, scale=T, validation="CV")
+summary(pls.fit)
+validationplot(pls.fit, val.type="MSEP")
+```
+
+
+We see that the smallest cross-validation error occurs when M = 11 componentsare used
+Hence ,M selected by cross-validation is 11.
+
+
+
+
+
+Test Error  PLS model
+
+```{r}
+pls.pred = predict(pls.fit, test.college, ncomp=11)
+mean((test.college$Apps - data.frame(pls.pred))^2)
+
+```
+
+The mean squared error,TEST MSE is $ pls_{MSE}$=1494427 which smaller than  the test error of  pcr model.
+
+
+
+##(g) 
+Comment on the results obtained. How accurately can we predict the number of college applications received? Is there much
+difference among the test errors resulting from these five approaches?
+
+**Disscussion**
+
+Coefficient of determination, often referred to as $R^2$, represents the predictive power of the model as a value between 0 and 1.
+Zero means the model is random (explains nothing); 1 means there is a perfect fit.
+In our case, $R^2$  for all models are close to 0.9, hence,  Ordinary least squares, PLS regression, lasso, and PCR regression predicted with high  accuracy and almost equally.
+Lasso reduces the F.Undergrad and Books variables to zero and shrinks coefficients of other variables but its accuracy was poor than  other models. Eventhough, PCR  regression used all variables which means  no dimension reduction occurs, the predection acuracy was high.
+
+The follwing table and graphs shows the $R^2$ for all fitted models.
+
+
+
+```{r,warning=F,message=F}
+library(knitr)
+test.avg <- mean(test.college$Apps)
+lm.r2 <- 1 - mean((pred.lm - test.college$Apps)^2) / mean((test.avg - test.college$Apps)^2)
+ridge.r2 <- 1 - mean((pred.ridge - test.college$Apps)^2) / mean((test.avg - test.college$Apps)^2)
+lasso.r2 <- 1 - mean((lasso.pred - test.college$Apps)^2) / mean((test.avg - test.college$Apps)^2)
+pcr.r2 <- 1 - mean((pred.pcr - test.college$Apps)^2) / mean((test.avg - test.college$Apps)^2)
+pls.r2 <- 1 - mean((pls.pred - test.college$Apps)^2) / mean((test.avg - test.college$Apps)^2)
+barplot(c(lm.r2, ridge.r2, lasso.r2, pcr.r2, pls.r2), col="lightblue", names.arg=c("OLS", "Ridge", "Lasso", "PCR", "PLS"), main="Test R-squared")
+Models=c("OLS", "Ridge", "Lasso", "PCR", "PLS")
+r2.error<-c(lm.r2,ridge.r2,lasso.r2,pcr.r2,pls.r2)
+#r2.error
+x<-data.frame(Models,r2.error)
+kable(x,caption = "Test R-squared")
+```
+
+ggplot
+
+```{r}
+library(ggplot2)
+ggplot(data=x, aes(x=Models, y=r2.error, fill = Models)) +
+  geom_bar(stat="identity") + coord_flip() +
+  theme_minimal() +
+  labs(title = "R-squared of Models")
+```
+
+
+#3. Question 6.8.11 pg 26
+
+ 11. We will now try to predict per capita crime rate in the Boston dataset.
+
+##(a)
+Try out some of the regression methods explored in this chapter,such as best subset selection, the lasso, ridge regression, and
+PCR. Present and discuss results for the approaches that you consider.
+
+###Best subset selection
+
+```{r}
+library(MASS)
+library(leaps)
+library(glmnet)
+data(Boston)
+kable(head(Boston))
+set.seed(1)
+predict.regsubsets = function(object, newdata, id, ...) {
+    form = as.formula(object$call[[2]])
+    mat = model.matrix(form, newdata)
+    coefi = coef(object, id = id)
+    mat[, names(coefi)] %*% coefi
+}
+k = 10
+p = ncol(Boston) - 1
+folds = sample(rep(1:k, length = nrow(Boston)))
+cv.errors = matrix(NA, k, p)
+for (i in 1:k) {
+    best.fit = regsubsets(crim ~ ., data = Boston[folds != i, ], nvmax = p)
+    for (j in 1:p) {
+        pred = predict(best.fit, Boston[folds == i, ], id = j)
+        cv.errors[i, j] = mean((Boston$crim[folds == i] - pred)^2)
+    }
+}
+mean.cv.error = apply(cv.errors, 2, mean)
+plot(mean.cv.error, pch = 19, type = "b",xlab = "Number of variables", ylab = "CV error")
+
+```
+
+ggplot
+```{r}
+library(ggplot2)
+x <- c(1:13)
+y <- data.frame(mean.cv.error)
+ y1 <- y$mean.cv.error
+qplot(x,y1, geom = "line", xlab = "Number of variables", ylab = "CV error",color="red", main = "The CV error vs number of variables ")
+```
+
+
+Test error and number of variables selected 
+
+```{r}
+which.min(mean.cv.error)
+mean.cv.error[which.min(mean.cv.error)]
+```
+
+Test error for best subset selection, MSE= 43.47287 with 9 variables.
+
+###Lasso
+
+```{r}
+x = model.matrix(crim ~ . - 1, data = Boston)
+y = Boston$crim
+cv.lasso = cv.glmnet(x, y, type.measure = "mse")
+plot(cv.lasso)
+```
+
+ggplot
+```{r}
+library(ggplot2)
+x1 <- cv.lasso$lambda
+x<-log(x1)
+y <- cv.lasso$cvm
+ #y1 <- cv.lasso$cvm
+qplot(x,y, geom = "line", xlab = "log(lamda)", ylab = "MSE error",color="red", main = "The mse error vs lamda ")
+```
+
+coefficents, best lamda and Error Rate
+
+```{r}
+coef(cv.lasso)
+#sqrt(cv.lasso$cvm[cv.lasso$lambda == cv.lasso$lambda.1se])
+cv.lasso$lambda.min # best lamda
+cv.lasso$cvm[cv.lasso$lambda == cv.lasso$lambda.1se]
+
+```
+
+Test error is 54.83663 with best lamda 0.04674894
+ 
+
+###Ridge regression
+
+```{r}
+x = model.matrix(crim ~ . - 1, data = Boston)
+y = Boston$crim
+cv.ridge = cv.glmnet(x, y, type.measure = "mse", alpha = 0)
+plot(cv.ridge)
+
+
+```
+
+
+ggplot
+```{r}
+library(ggplot2)
+x2 <- cv.ridge$lambda
+x<-log(x2)
+y <- cv.ridge$cvm
+ #y1 <- cv.lasso$cvm
+qplot(x,y, geom = "line", xlab = "log(lamda)", ylab = "MSE error",color="red", main = "The mse error vs lamda ")
+```
+
+coefficents, best lamda and Error Rate
+
+```{r}
+coef(cv.ridge)
+cv.ridge$lambda.min # best lamda
+
+cv.ridge$cvm[cv.ridge$lambda == cv.ridge$lambda.1se] #error rate
+```
+Test error is 54.83705 with best lamda 0.5899047
+
+###PCR
+
+```{r}
+pcr.fit = pcr(crim ~ ., data = Boston, scale = TRUE, validation = "CV")
+summary(pcr.fit)
+validationplot(pcr.fit, val.type = "MSEP")
+
+```
+
+
+
+ We see smallest cross validation error at M=13, which is root mean squre value , to calculate MSE =(6.594)^2=43.480836
+ 
+ **Disscussion**
+ 
+ Using a best subset selection approach, the cross-validation methods selects 9 variable model and its  CV estimate for test MSE
+ is 43.47287. The lasso model selects minimum lambda value of 0.04674894 whith the model CV estimate for test MSE is 54.83663. The 
+ ridge regression selects minimum lambda value of 0.5899047 and the model CV estimate for test MSE is 54.83705. The pcr model shows
+ that 13 variables,indicates no dimension reduction occur and CV estimate for its test MSE is 43.480836.
+ 
+
+ 
+##(b) 
+Propose a model (or set of models) that seem to perform well onthis data set, and justify your answer. Make sure that you are
+evaluating model performance using validation set error, crossvalidation,or some other reasonable alternative, as opposed to
+using training error.
+
+**Ans**
+By comaring the cross validation error, best subset selection method with 9 variables is the best model for this data.(with lowest CV ERROR)
+
+
+##(c) 
+Does your chosen model involve all of the features in the dataset? Why or why not?
+
+**Ans**
+No,  subset selection approach uses 9 variables.
+  
+#Q4. 
+In the past couple of homework assignments you have used different classification methods to analyze the dataset you chose. For this homework, please write a summary report including but not limited to 
+    i) Introduction to the dataset - (response, predictor variables, number of observations, and number of predictors)
+    ii) The question you are trying to address
+    iii) Initial cleaning of the data performed
+    iv) Initial descriptive (numerical summary and graphical - only relevant ones) analysis done
+    v) Classification methods used
+    vi) Choice of the model - test error/cross validation
+    vii) Conclusion and discussion (refer back to the question you are trying to address)
+    viii) Write the report neatly!
+
+*ANS*
+I HAVE SUBMITED SEPRATE PDF FILE. I could not include image.
+
+
+
+

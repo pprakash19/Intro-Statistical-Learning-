@@ -1,0 +1,628 @@
+---
+title: "chp9-SVM"
+author: "Prakash Paudyal"
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    latex_engine: xelatex
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+You do not need to include the above statements.
+
+Please do the following problems from the text book ISLR. (use set.seed(702) to replicate your results).
+
+**1. Question 9.7.2 pg 368**
+(2.) We have seen that in $p = 2$ dimensions, a linear decision boundary takes the form  $\beta_0 + \beta_1X_1 + \beta_2X_2 = 0$.We now investigate
+a non-linear decision boundary.
+
+**(a) **
+Sketch the curve \[(1 + X_1)^2 + (2 - X_2)^2 = 4\]
+**Ans**
+Circle with center (h,k) and radius r  is $(x – h)^2 + (y – k)^2 = r^2$, Hence given circle has center at (-1,2) and radius 2.
+
+```{r}
+radius = 2
+plot(NA, NA, type = "n", xlim = c(-4, 2), ylim = c(-1, 5), asp = 1, xlab = "X1",  ylab = "X2")
+symbols(c(-1), c(2), circles = c(radius), add = TRUE, inches = FALSE,fg = par("col"))
+text(c(-1),c(2),"(-1,2)")
+```
+
+**(b)**
+On your sketch, indicate the set of points for which \[(1 + X_1)^2 + (2 - X_2)^2 > 4,\] as well as the set of points for which \[(1 + X_1)^2 + (2 - X_2)^2 \le 4.\]
+**Ans**
+Any points of x1 and x2 which yeilds $r^2<4$ come uner the circle otherwise outside of circle.
+
+```{r}
+plot(NA, NA, type = "n", xlim = c(-4, 2), ylim = c(-1, 5), asp = 1, xlab = "X1", ylab = "X2")
+symbols(c(-1), c(2), circles = c(2), add = TRUE, inches = FALSE)
+text(c(-1), c(2), "< 4,(-1,2)",col = "red")
+text(c(-1), c(3), "< 4,(-1,3)",col = "red")
+text(c(-4), c(2), "> 4, (-4,2)",col = "blue")
+text(c(3), c(1), " >4, (3,1)",col = "blue")
+text(c(-2), c(5), " >4, (-2,5)",col = "blue")
+
+```
+
+
+**(c) **
+Suppose that a classifier assigns an observation to the blue class if  \[(1 + X_1)^2 + (2 - X_2)^2 > 4,\] and to the red class otherwise. 
+To what class is the observation $(0, 0)$ classified? $(−1, 1)? (2, 2)? (3, 8)$?
+
+**ANS:**
+By substituting given values of  $X_1$ and $X_2$  in the equation we can check if the result is less or greater than 4. Any result which is less 
+than 4 is red class and the ones that are greater than 4 belong to the blue class. For $(0,0)$, we have $5 > 4$ (blue class), for $(-1,1)$, we have $1 < 4$ (red class), for $(2,2)$, we have $9 > 4$ (blue class), for $(3,8)$, we have $52 > 4$ (blue class).
+
+```{r}
+plot(c(0, -1, 2, 3), c(0, 1, 2, 8), col = c("blue", "red", "blue", "blue"), 
+    type = "p", asp = 1, xlab = "X1", ylab = "X2")
+symbols(c(-1), c(2), circles = c(2), add = TRUE, inches = FALSE)
+```
+
+**(d)**
+Argue that while the decision boundary in (c) is not linear in terms of $X_1$ and $X_2$, it is linear in terms of $X_1$, $X_1^2$, $X_2$ and $X_2^2$.
+**ANS:**
+If we expand the equation of the decision boundary \[(1 + X_1)^2 + (2 - X_2)^2 = 4\] by \[X_1^2 + X_2^2 + 2X_1 - 4X_2 + 1 = 0\] 
+which is sum of quadratic term. By enlarging the feature space by using quadratic function of predictors the result is linear  in terms of $X_1$, $X_1^2$, $X_2$ and $x_2^2$.
+
+
+**2. Question 9.7.7 pg 371**
+(7.) In this problem, you will use support vector approaches in order to predict whether a given car gets high or low gas mileage based on the
+Auto data set.
+**(a)**
+Create a binary variable that takes on a 1 for cars with gas mileage above the median, and a 0 for cars with gas mileage below the median.
+
+```{r}
+library(knitr)
+library(ISLR)
+data(Auto)
+gas.med = median(Auto$mpg)
+new.var = ifelse(Auto$mpg > gas.med, 1, 0)
+Auto$mpg01 = as.factor(new.var)
+kable(head(Auto))
+#auto<-Auto[,-1]
+
+```
+
+**(b)**
+
+Fit a support vector classifier to the data with various values of cost, in order to predict whether a car gets high or low gas mileage. Report the cross-validation errors associated with different values of this parameter. Comment on your results.
+
+```{r}
+library(e1071)
+set.seed(702)
+tune1 = tune(svm, mpg01 ~ ., data = Auto, kernel = "linear", ranges = list(cost = c(0.01, 0.1, 1, 5, 10, 100)))
+summary(tune1)
+```
+
+**Discussion:**
+We see that cost= 1 results in the lowest cross-validation error rate= 0.01262821. 
+
+
+ 
+**(c)**
+
+Now repeat (b), this time using SVMs with radial and polynomial basis kernels, with different values of gamma and 
+degree and cost. Comment on your results.
+
+**Radial Kernel**
+
+```{r}
+set.seed(702)
+tune2 = tune(svm, mpg01 ~ ., data = Auto, kernel = "radial", ranges = list(cost = c(0.1, 1, 5, 10), gamma = c(0.01, 0.1, 1, 5, 10, 100)))
+summary(tune2)
+#summary(tune.out$best.model)
+```
+**Discussion:**
+In radial karnel,  the lowest  corssvalidation  error rate  is 0.02544872  at cost=10 and gama =0.1.
+
+
+**Polynomial Kernel**
+
+```{r}
+set.seed(702)
+tune3 = tune(svm, mpg01 ~ ., data = Auto, kernel = "polynomial", ranges = list(cost = c(0.1,1, 5, 10), degree = c(2, 3, 4)))
+summary(tune3)
+
+```
+
+**Discussion:**
+In polynomial karnel,  the lowest  corssvalidation  error rate  is 0.5663462  at cost=10 and degree =2.
+Linear kernel produce lowest error rate
+
+**(d)**
+Make some plots to back up your assertions in (b) and (c).
+
+**Ans**
+As we can see linear karnel which has lowest cross validation error classified this data well.
+Polynomial has classification error 56% same suggested by plot, most of the data were missclassified and support 
+vector are around everywhere. Radial one was better than polynomial but still there were larg number of support vector.
+Hence linear model is best among the other model.
+
+**linear kernel**
+```{r,warning=FALSE}
+svm.linear = svm(mpg01 ~ ., data = Auto, kernel = "linear", cost = 1)
+svm.poly = svm(mpg01 ~ ., data = Auto, kernel = "polynomial", cost = 10, degree = 2)
+svm.radial = svm(mpg01 ~ ., data = Auto, kernel = "radial", cost = 10, gamma = 0.1)
+#plotpairs = function(fit) {for (name in names(Auto)[!(names(Auto) %in% c("mpg", "mpg01", "name"))]) {plot(fit, Auto, as.formula(paste("mpg~", name, sep = "")))}}
+#plotpairs(svm.linear)
+names(Auto)
+attach(Auto)
+#par(mfrow=c(1,2)) 
+plot(svm.linear, Auto, mpg~cylinders, slice=list( displacement=mean(displacement), horsepower=median(horsepower) ) )
+plot(svm.linear, Auto, mpg~displacement, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.linear, Auto, mpg~horsepower, slice=list( cylinders=mean(cylinders), displacement=median(displacement) ) )
+plot(svm.linear, Auto, mpg~weight, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.linear, Auto, mpg~year, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.linear, Auto, mpg~origin, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+```
+
+**ggplot linear**
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+names(Auto)
+sv.df <- Auto[svm.linear$index,]
+p11<- ggplot(NULL,aes(weight,displacement))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for  displacement vs weight  (x = Support vectors)")
+##1
+p1<- ggplot(NULL,aes(cylinders,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs cylinders (x = Support vectors)")
+p2<- ggplot(NULL,aes(displacement,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs displacement (x = Support vectors)")
+p3<- ggplot(NULL,aes(horsepower,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs horsepower (x = Support vectors)")
+p4<- ggplot(NULL,aes(weight,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs weight (x = Support vectors)")
+p5<- ggplot(NULL,aes(acceleration,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs acceleration (x = Support vectors)")
+p6<- ggplot(NULL,aes(year,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs year (x = Support vectors)")
+p7<- ggplot(NULL,aes(origin,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs origin (x = Support vectors)")
+p8<- ggplot(NULL,aes(name,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs name (x = Support vectors)")
+
+grid.arrange(p1, p2,p3,p4, ncol=2,  top = "GGplot linear")
+grid.arrange(p5, p6,p7,p8, ncol=2,  top = "GGplot linear")
+
+
+```
+
+
+
+
+**polynomial kernel**
+
+```{r}
+#plotpairs(svm.poly)
+#par(mfrow=c(1,2)) 
+plot(svm.poly, Auto, mpg~cylinders, slice=list( displacement=mean(displacement), horsepower=median(horsepower) ) )
+plot(svm.poly, Auto, mpg~displacement, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.poly, Auto, mpg~horsepower, slice=list( cylinders=mean(cylinders), displacement=median(displacement) ) )
+plot(svm.poly, Auto, mpg~weight, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.poly, Auto, mpg~year, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.poly, Auto, mpg~origin, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+```
+
+**ggplot poly**
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+#names(Auto)
+sv.df <- Auto[svm.poly$index,]
+p11<- ggplot(NULL,aes(weight,displacement))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for  displacement vs weight  (x = Support vectors)")
+##1
+p1<- ggplot(NULL,aes(cylinders,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs cylinders (x = Support vectors)")
+p2<- ggplot(NULL,aes(displacement,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs displacement (x = Support vectors)")
+p3<- ggplot(NULL,aes(horsepower,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs horsepower (x = Support vectors)")
+p4<- ggplot(NULL,aes(weight,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs weight (x = Support vectors)")
+p5<- ggplot(NULL,aes(acceleration,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs acceleration (x = Support vectors)")
+p6<- ggplot(NULL,aes(year,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs year (x = Support vectors)")
+p7<- ggplot(NULL,aes(origin,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs origin (x = Support vectors)")
+p8<- ggplot(NULL,aes(name,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs name (x = Support vectors)")
+
+grid.arrange(p1, p2,p3,p4, ncol=2,  top = "GGplot poly")
+grid.arrange(p5, p6,p7,p8, ncol=2,  top = "GGplot poly")
+
+
+```
+**Radial kernel**
+
+```{r}
+#plotpairs(svm.radial)
+#par(mfrow=c(1,2)) 
+plot(svm.radial, Auto, mpg~cylinders, slice=list( displacement=mean(displacement), horsepower=median(horsepower),weight=4 ) )
+plot(svm.radial, Auto, mpg~displacement, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.radial, Auto, mpg~horsepower, slice=list( displacement=mean(displacement), weight=median(cylinders) ) )
+plot(svm.radial, Auto, mpg~weight, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+plot(svm.radial, Auto, mpg~acceleration, slice=list( displacement=mean(displacement), horsepower=median(horsepower),weight=5 ) )
+#plot(svm.radial, Auto, mpg~origin, slice=list( cylinders=mean(cylinders), horsepower=median(horsepower) ) )
+#plot(svm.radial, Auto, mpg ~ displacement, slice = list(acceleration = mean(acceleration), horsepower=median(horsepower),weight=6))
+```
+
+**ggplot radial**
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+#names(Auto)
+sv.df <- Auto[svm.radial$index,]
+p11<- ggplot(NULL,aes(weight,displacement))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for  displacement vs weight  (x = Support vectors)")
+##1
+p1<- ggplot(NULL,aes(cylinders,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs cylinders (x = Support vectors)")
+p2<- ggplot(NULL,aes(displacement,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs displacement (x = Support vectors)")
+p3<- ggplot(NULL,aes(horsepower,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs horsepower (x = Support vectors)")
+p4<- ggplot(NULL,aes(weight,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs weight (x = Support vectors)")
+p5<- ggplot(NULL,aes(acceleration,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs acceleration (x = Support vectors)")
+p6<- ggplot(NULL,aes(year,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs year (x = Support vectors)")
+p7<- ggplot(NULL,aes(origin,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs origin (x = Support vectors)")
+p8<- ggplot(NULL,aes(name,mpg))+geom_point(data=Auto,aes(color=factor(mpg01)), shape=1)+geom_point(data=sv.df, color='blue', shape =4)+labs(title="SVM plot for mpg vs name (x = Support vectors)")
+
+grid.arrange(p1, p2,p3,p4, ncol=2,  top = "GGplot radial")
+grid.arrange(p5, p6,p7,p8, ncol=2,  top = "GGplot radial")
+
+
+```
+
+**3. Question 9.7.8 pg 371**
+(8.) This problem involves the OJ data set which is part of the ISLR package.
+**(a)**
+Create a training set containing a random sample of 800 observations, and a test set containing the remaining
+observations.
+```{r}
+library(ISLR)
+library(knitr)
+data(OJ)
+set.seed(702)
+train = sample(dim(OJ)[1], 800)
+OJ.train = OJ[train, ]
+OJ.test = OJ[-train, ]
+kable(head(OJ))
+```
+
+
+**(b)**
+
+Fit a support vector classifier to the training data using cost=0.01, with Purchase as the response and the other variables
+as predictors. Use the summary() function to produce summary statistics, and describe the results obtained.
+
+```{r}
+library(e1071)
+svm.linear = svm(Purchase ~ ., kernel = "linear", data = OJ.train, cost = 0.01)
+summary(svm.linear)
+```
+
+**Discussion**
+SVM uses the classfiction method since the response variable is factor.Kernel used was linear with cost of  constraint violation  0.01 and gama=0.05555556.The numbers of support vectors are 446 out of 800 of which 224 belong to CH and 222 belong to MM.
+
+**(c)**
+
+What are the training and test error rates?
+
+```{r}
+train.pred = predict(svm.linear, OJ.train)
+table(OJ.train$Purchase, train.pred)
+```
+
+**Training error rate**
+
+```{r}
+Train.err.l<-(56 + 79)/800
+Train.err.l
+```
+
+**Test error rate**
+
+```{r}
+test.pred = predict(svm.linear, OJ.test)
+table(OJ.test$Purchase, test.pred)
+```
+```{r}
+Test.err.l<-(19 + 23)/270
+Test.err.l
+```
+
+**(d)**
+
+Use the tune() function to select an optimal cost. Consider values in the range 0.01 to 10.
+
+```{r}
+set.seed(702)
+tune.out = tune(svm, Purchase ~ ., data = OJ.train, kernel = "linear", ranges = list(cost = 10^seq(-2, 
+    1, by = 0.25)))
+summary(tune.out)
+```
+
+**Discussion**
+Optimal cost of constraint violation is 0.5623413 with 10 fold cross validation. Best performance error rate =0.16625
+
+**(e)**
+
+Compute the training and test error rates using this new value for cost.
+
+**Traing error rate**
+
+```{r}
+svm.linear = svm(Purchase ~ ., kernel = "linear", data = OJ.train, cost = tune.out$best.parameters$cost)
+train.pred = predict(svm.linear, OJ.train)
+table(OJ.train$Purchase, train.pred)
+```
+```{r}
+TrainCV.err.l<-(68 + 62)/800
+TrainCV.err.l
+```
+
+
+**Test error rate**
+
+```{r}
+test.pred = predict(svm.linear, OJ.test)
+table(OJ.test$Purchase, test.pred)
+```
+```{r}
+TestCV.err.l<-(18 + 23)/270
+TestCV.err.l
+```
+**Discussion:**
+The training error and test error slightly decresesto by using best cost.
+
+**(f)**
+
+Repeat parts (b) through (e) using a support vector machine with a radial kernel. Use the default value for gamma.
+
+**Fit the support vector classifier with cost=0.01**
+
+```{r}
+set.seed(702)
+svm.radial = svm(Purchase ~ ., data = OJ.train, kernel = "radial",cost=0.01)
+summary(svm.radial)
+```
+**Discussion**
+SVM uses the classfiction method since the response variable is factor.Kernel used was radial with cost of  constraint violation  0.01 and gama=0.05555556.The numbers of support vectors are 634 out of 800 of which 318 belong to CH and 316 belong to MM.
+
+**Traning error for SVM**
+
+```{r}
+train.pred = predict(svm.radial, OJ.train)
+table(OJ.train$Purchase, train.pred)
+
+```
+
+```{r}
+Train.err.r<-(0 + 316)/800
+Train.err.r
+```
+
+**Test error for SVM**
+
+```{r}
+test.pred = predict(svm.radial, OJ.test)
+table(OJ.test$Purchase, test.pred)
+```
+```{r}
+Test.err.r<-(101 + 0)/270
+Test.err.r
+```
+
+**Discussion**
+With cost=0.01 svm classifier did not peform well the error rate for both training and test data are very high.Actually support vector classifier with radial kernel was able to classify only CH.It did not classified  even single MM purchase.
+
+
+**Using tune() to find optimal value of cost**
+
+```{r}
+set.seed(702)
+tune.out = tune(svm, Purchase ~ ., data = OJ.train, kernel = "radial", ranges = list(cost = 10^seq(-2, 
+    1, by = 0.25)))
+summary(tune.out)
+```
+
+**Discussion**
+optimal value of cost=3.162278
+
+**Train and test error with optimal value of cost paramater **
+
+```{r}
+svm.radial = svm(Purchase ~ ., data = OJ.train, kernel = "radial", cost = tune.out$best.parameters$cost)
+train.pred = predict(svm.radial, OJ.train)
+table(OJ.train$Purchase, train.pred)
+```
+
+**Train Error of model at optimal cost**
+
+```{r}
+TrainCV.err.r<-(73 + 42)/800
+TrainCV.err.r
+```
+
+**Test Error of model at optimal cost**
+
+```{r}
+test.pred = predict(svm.radial, OJ.test)
+table(OJ.test$Purchase, test.pred)
+```
+```{r}
+TestCV.err.r<-(21 + 19)/270
+TestCV.err.r
+```
+
+**Discussion**
+
+By tuning the optimal cost and using it to fit model the error rate for both training and test data set decreased. And this model peromed better than previous one.
+
+**(g)**
+Repeat parts (b) through (e) using a support vector machine with a polynomial kernel. Set degree=2.
+
+```{r}
+set.seed(702)
+svm.poly = svm(Purchase ~ ., data = OJ.train, kernel = "poly", degree = 2,cost=0.01)
+summary(svm.poly)
+```
+
+
+**Discussion**
+SVM uses the classfiction method since the response variable is factor.Kernel used was polynomial with cost of  constraint violation  0.01 and gama=0.05555556.The numbers of support vectors are 635 out of 800 of which 319 belong to CH and 316 belong to MM
+
+**Train Error **
+
+```{r}
+train.pred = predict(svm.poly, OJ.train)
+table(OJ.train$Purchase, train.pred)
+```
+```{r}
+Train.err.p<-(315+ 0)/800
+Train.err.p
+```
+
+**Test Error of model **
+
+```{r}
+test.pred = predict(svm.poly, OJ.test)
+table(OJ.test$Purchase, test.pred)
+```
+```{r}
+Test.err.p<-(101 + 0)/270
+Test.err.p
+```
+
+**Discussion**
+With cost=0.01 svm classifier did not peform well the error rate for both training and test data are very high.Actually support vector classifier with poly kernel was only able to classify  CH.It did not classified  even single MM purchase.
+
+**Tuing optimal cost**
+
+```{r}
+set.seed(702)
+tune.out = tune(svm, Purchase ~ ., data = OJ.train, kernel = "poly", degree = 2, 
+    ranges = list(cost = 10^seq(-2, 1, by = 0.25)))
+summary(tune.out)
+
+```
+
+**Discussion**
+optimal cost= 10
+
+```{r}
+svm.poly = svm(Purchase ~ ., data = OJ.train, kernel = "poly", degree = 2, cost = tune.out$best.parameters$cost)
+train.pred = predict(svm.poly, OJ.train)
+table(OJ.train$Purchase, train.pred)
+```
+
+**Train Error at optimal cost= 10**
+
+```{r}
+TrainCV.err.p<-(81 + 46)/800
+TrainCV.err.p
+```
+**Test Error at optimal cost= 10**
+
+```{r}
+test.pred = predict(svm.poly, OJ.test)
+table(OJ.test$Purchase, test.pred)
+```
+```{r}
+TestCV.err.p<-(23 + 22)/270
+TestCV.err.p
+```
+
+**Discussion:**
+Tuning reduces the training error to 15.87% and test error to 16.66% which is worse than radial kernel but slightly better
+than linear kernel.
+
+
+**(h)**
+Overall, which approach seems to give the best results on this data?
+
+**Ans**
+The linear model peroform beter than other with cost=0.01.But after tuing the best parameter for the cost the model with radial  classification produces the best results both for training and test data.Table for errors is given below.
+
+```{r,warning=F,message=F}
+library(knitr)
+Train.error<-c(Train.err.l,Train.err.r,Train.err.p)
+Train.errorCV<-c(TrainCV.err.l,TrainCV.err.r,TrainCV.err.p)
+Test.error<-c(Test.err.l,Test.err.r,Test.err.p)
+Test.errorCV<-c(TestCV.err.l,TestCV.err.r,TestCV.err.p)
+Kernel<-c("Linear","Radial","Polynomial")
+tab<-data.frame(Kernel,Train.error,Test.error,Train.errorCV,Test.errorCV)
+kable(tab,digits = 6,align = "l", caption = "Errors Table")
+```
+
+**4.**
+
+In the past couple of homework assignments you have used different classification methods to analyze the dataset you chose. For this homework, use a support vector machine to model your data. Find the test error using any/all of methods (VSA, K-fold CV). Compare the results you obtained with the result from previous homework. Did the results improve? (Use the table with the previous results to compare)
+
+**Ans**
+
+SVM produced sligltly small VSA error than  random forest but random forest gave less error in 5-fold cross validation.
+
+**Error Table**
+
+```{r}
+library(knitr)
+name<-c("Method","VSA","LOOCV","5-fold CV")
+Method<-c("Logistic Reg","knn","LDA","QDA","MclustDA","MclustDA (EDDA)","SVM","Tree","Baging","RandomForest","Boosting")
+VSA<-c(0.1793391,0.2428449,0.1770053,0.2154526,0.2117676,0.2067314,0.1714627,0.1788887,0.178888741546214,0.1745127,0.1788887)
+LOOCV<-c(0.1873464,0.3593366,0.2168305,0.213145,"NA",0.2067314,"NA","NA","NA","NA","NA")
+FOLD.5CV<-c(0.1219478,0.2909104,0.2194654,0.2096682,0.2307535,0.2027846,0.1736882,0.1788887,0.185447150877503,0.1705495,0.1717061)
+dat<-data.frame(Method,VSA,LOOCV,FOLD.5CV)
+kable(dat,digits = 4, align = "c")
+```
+  
+  
+  
+  **SVM for adult data**
+  
+```{r}
+library(knitr)
+adultnlv<-read.csv("adult.nlvl.csv",header = TRUE)
+adult<-adultnlv[,-1]
+head(adult)
+##split the data into 75:25 ratio.
+```
+
+split 75%
+
+```{r}
+## 75% of the sample size
+set.seed(702)
+#adult.nlvl$incomelevel <- ifelse(adult.nlvl$income=="<=50K", 0,1)
+#Auto$mpg01 <- ifelse(Auto$mpg>median(Auto$mpg),1,0)
+#adult.nlvl$incomelevel<-factor(adult.nlvl$incomelevel)
+smp_size <- floor(0.75 * nrow(adult))
+## set the seed to make partition reproductible
+train_ind <- sample(seq_len(nrow(adult)), size = smp_size)
+
+train <- adult[train_ind, ]
+test <- adult[-train_ind, ]
+```
+
+
+**VSA**
+
+```{r}
+library(e1071)
+set.seed(702)
+svm.linear.adult = svm(incomelevel ~ ., kernel = "radial", data = train)
+summary(svm.linear.adult)
+```
+
+```{r}
+test.pred.a = predict(svm.linear.adult, test)
+table(test$incomelevel, test.pred.a)
+```
+```{r}
+Test.ln.a<-( 909+384)/7541
+Test.ln.a
+```
+
+**kfold**
+
+**Error estimation of ‘svm’ using 5-fold cross validation: 0.1736882**
+
+```{r}
+set.seed(702)
+library(e1071)
+#tune.a.linear = tune(svm, incomelevel ~ ., data = train, kernel = "linear", ranges =list(cost=c(0.1,1,5)),tune.control="cross",cross=5)
+ tuned = tune.svm(incomelevel~., data = train, gamma = 10^-2, cost = 10^2, tunecontrol=tune.control(cross=5))
+
+summary(tuned)
+```
+

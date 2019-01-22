@@ -1,0 +1,490 @@
+---
+title: "chp7-BeyondLinearity"
+author: "Prakash Paudyal"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+Please do the following problems from the text book ISLR. (use set.seed(702) to replicate your results).
+
+#1. Question 7.9.6 pg 299
+ (6.) In this exercise, you will further analyze the Wage data set considered throughout this chapter.
+
+```{r,message=FALSE}
+library(ISLR)
+data(Wage)
+attach(Wage)
+#head(Wage)
+#names(Wage)
+str(Wage)
+```
+
+##(a)
+
+**Perform polynomial regression to predict wage using age. Use cross-validation to select the optimal degree d for the polynomial.     What degree was chosen, and how does this compare to the results of hypothesis testing using ANOVA? Make a plot of the resulting polynomial fit to the data.**
+
+```{r}
+library(knitr)
+library(boot)
+set.seed(702)
+deltas = rep(NA, 10)
+for (i in 1:10) {
+  glm.fit = glm(wage~poly(age, i), data=Wage)
+  deltas[i] = cv.glm(Wage, glm.fit, K=10)$delta[1]
+}
+#delta:cross validation prediction errors, here we used 1st one
+deltas
+plot(1:10, deltas, xlab = "Degree", ylab = "CV Eror", type = "l")
+d.min <- which.min(deltas)
+points(which.min(deltas), deltas[which.min(deltas)], col = "red", cex = 2, pch = 20)
+
+```
+ 
+ Degree,d=9 is optimal degree for polyminal, choosen by cross validation method.
+ 
+ we use the anova() in order to test null hypothesis that a model $M_1$ is sufficient to explain the data
+ against the altenative hypothesis that a more complex model $M_2$ is required.
+ 
+ We fit the models upto 10 polynomial degrees of ages.
+ 
+```{r}
+lm1 <- lm(wage ~ age, data = Wage)
+lm2 <- lm(wage ~ poly(age, 2), data = Wage)
+lm3 <- lm(wage ~ poly(age, 3), data = Wage)
+lm4 <- lm(wage ~ poly(age, 4), data = Wage)
+lm5 <- lm(wage ~ poly(age, 5), data = Wage)
+lm6 <- lm(wage ~ poly(age, 6), data = Wage)
+lm7 <- lm(wage ~ poly(age, 7), data = Wage)
+lm8 <- lm(wage ~ poly(age, 8), data = Wage)
+lm9 <- lm(wage ~ poly(age, 9), data = Wage)
+lm10 <-lm(wage ~ poly(age, 10), data = Wage)
+# perfroming anova analysis 
+anova(lm1, lm2, lm3, lm4, lm5, lm6, lm7, lm8, lm9,lm10)
+```
+
+Anova,P-values, shows that 2nd , 3rd  and 9th degree of polynomial degree regression provide a reasonable fit to the data. Among them
+2nd order polynomial provide best fit to the data. Where as cross validation method provide best fit at polynominal degree of 9.
+
+
+**Plotting polynomial fit **
+
+```{r}
+
+
+plot(wage ~ age, data = Wage, col = "green")
+agelims <- range(Wage$age)
+age.grid <- seq(from = agelims[1], to = agelims[2])
+
+
+poly3 <- lm(wage ~ poly(age, 3), data = Wage)
+preds <- predict(poly3, newdata = list(age = age.grid))
+lines(age.grid, preds, col = "blue", lwd = 2, lty = 1)
+
+poly9 <- lm(wage ~ poly(age, 9), data = Wage)
+preds9 <- predict(poly9, newdata = list(age = age.grid))
+lines(age.grid, preds9, col = "red", lwd = 2, lty=2)
+legend("topright", legend=c("poly3", "poly9"),
+              col=c("blue", "red"), lty=1:2, cex=0.8)
+title("fig:1-Degree-3 and 9- Polynomial FIT",outer=FALSE)
+
+```
+ 
+##(b)
+
+**Fit a step function to predict wage using age, and perform crossvalidation to choose the optimal number of cuts. Make a plot of       the fit obtained.**
+ 
+ 
+ 
+```{r}
+set.seed(702)
+cvs <- rep(NA, 10)
+for (i in 2:10) {
+    Wage$age.cut <- cut(Wage$age, i)
+    fit <- glm(wage ~ age.cut, data = Wage)
+    cvs[i] <- cv.glm(Wage, fit, K = 10)$delta[1]
+}
+plot(2:10, cvs[-1], xlab = "Cuts", ylab = "Test Error", type = "l")
+d.min <- which.min(cvs)
+points(which.min(cvs), cvs[which.min(cvs)], col = "red", cex = 2, pch = 20)
+title("Fig:2,10-Fold Cross Validation to find optimal cuts",outer=FALSE)
+
+```
+
+
+The cross validation shows that test error is minimum for optimal cuts k=8 cuts.
+Train the data with cuts, k=8
+
+```{r}
+lm.fit = glm(wage~cut(age, 8), data=Wage)
+agelims = range(Wage$age)
+age.grid = seq(from=agelims[1], to=agelims[2])
+lm.pred = predict(lm.fit, data.frame(age=age.grid))
+plot(wage~age, data=Wage, col="lightblue")
+lines(age.grid, lm.pred, col="darkgreen", lwd=2)
+title("Fig:3, Scatter plot of data with fitted line at cuts=8",outer=FALSE)
+
+```
+
+#2. Question 7.9.9 pg 299
+** (9.) This question uses the variables dis (the weighted mean of distances to five Boston employment centers) and nox (nitrogen    oxides concentration in parts per 10 million) from the Boston data. We will treat dis as the predictor and nox as the response.**
+ 
+##(a)
+**Use the poly() function to fit a cubic polynomial regression to predict nox using dis. Report the regression output, and plot         the resulting data and polynomial fits.**
+
+```{r}
+library(knitr)
+library(MASS)
+data(Boston)
+set.seed(702)
+fit <- lm(nox ~ poly(dis, 3), data = Boston)
+a<-coef(summary(fit))
+kable(a)
+```
+
+Plot nox vs dis and polynominal fit
+
+```{r}
+dislims <- range(Boston$dis)
+dis.grid <- seq(from = dislims[1], to = dislims[2], by = 0.1)
+preds <- predict(fit, list(dis = dis.grid))
+plot(nox ~ dis, data = Boston, col = "lightblue")
+lines(dis.grid, preds, col = "darkgreen", lwd = 2)
+```
+
+Nox has decrease trend with dis.
+
+##(b) 
+**Plot the polynomial fits for a range of different polynomial degrees (say, from 1 to 10), and report the associated residual         sum of squares.**
+
+```{r}
+set.seed(702)
+rss <- rep(NA, 10)
+for (i in 1:10) {
+  lm.fit2 <- lm(nox ~ poly(dis, i), data = Boston)
+  rss[i] <- sum(lm.fit2$residuals^2)
+}
+rss
+plot(1:10, rss, xlab = "Polynomial Degree", ylab = "RSS", type = "l")
+d.min <- which.min(rss)
+points(d.min, rss[d.min], col = "red", cex = 2, pch = 20)
+```
+
+Plot shows that RSS  decreases with degree of polynomial and it is minimum at polynomil of  degree 10.
+
+
+
+##(c) 
+**Perform cross-validation or another approach to select the optimal degree for the polynomial, and explain your results.**
+
+```{r}
+set.seed(702)
+deltas1 <- rep(NA, 10)
+for (i in 1:10) {
+    fitc <- glm(nox ~ poly(dis, i), data = Boston)
+    deltas1[i] <- cv.glm(Boston, fitc, K = 10)$delta[1]
+}
+plot(1:10, deltas1, xlab = "Degree", ylab = "Test Error", type = "l")
+d.minn <- which.min(deltas1)
+points(d.minn, deltas1[d.minn], col = "red", cex = 2, pch = 20)
+d.minn
+```
+
+Polymonial degree of 3 has minimum error rate  in 10 fold cross validation.Above the 3rd degree polymonial test error started to  increase and slowly came down at 10th degree.
+
+##(d) 
+**Use the bs() function to fit a regression spline to predict nox using dis. Report the output for the fit using four degrees of   freedom. How did you choose the knots? Plot the resulting fit.**
+
+```{r}
+library(knitr)
+library(splines)
+#bs.fit <- lm(nox ~ bs(dis, df=4,knots = c(4, 7, 11)), data = Boston)
+bs.fit1 <- lm(nox ~ bs(dis, df=4) ,data = Boston)
+#summary(bs.fit)
+kable(coef(summary(bs.fit1)))
+#attr(bs(Boston$dis ,df=4) ,"knots ")
+pred <- predict(bs.fit1, list(dis = dis.grid))
+plot(nox ~ dis, data = Boston, col = "lightgreen")
+lines(dis.grid, pred, col = "blue", lwd = 2)
+title("Spline with four degrees of freedom")
+```
+ 
+ 
+ Summary shows that all the spline fit are significant. Plot of fitted line shows that model fited data well.
+ We  useed the df option to produce a spline with knots at uniform quantiles of the data
+ 
+##(e)
+**Now fit a regression spline for a range of degrees of freedom, and plot the resulting fits and report the resulting RSS.        Describe the results obtained.**
+
+```{r}
+set.seed(702)
+rss <- rep(NA, 16)
+for (i in 3:16) {
+  lm.fit <- lm(nox ~ bs(dis, df = i), data = Boston)
+  rss[i] <- sum(lm.fit$residuals^2)
+}
+rss[-c(1, 2)]
+plot(3:16, rss[-c(1, 2)], xlab = "Degrees of freedom", ylab = "RSS", type = "l")
+d.min <- which.min(rss)
+points(d.min, rss[d.min], col = "red", cex = 2, pch = 20)
+```
+
+The regression splines upto 16th order were fitted and its corresponding RSS were computed. The results showed 14th order with least RSS.
+
+##(f)
+**Perform cross-validation or another approach in order to select the best degrees of freedom for a regression spline on this data. Describe your results.**
+
+```{r,warning=FALSE}
+set.seed(702)
+cv <- rep(NA, 16)
+for (i in 3:16) {
+  fit <- glm(nox ~ bs(dis, df = i), data = Boston)
+  cv[i] <- cv.glm(Boston, fit, K = 10)$delta[1]
+}
+plot(3:16, cv[-c(1, 2)], xlab = "Degrees of freedom", ylab = "Test error", type = "l")
+d.min <- which.min(cv)
+points(d.min, cv[d.min], col = "red", cex = 2, pch = 20)
+```
+
+The 10 fold cross validation methods suggest polynomial regression with 8th degree of freedom has least test error.
+
+#3. Question 7.9.10 pg 300
+(10.) This question relates to the College data set.
+
+##(a) 
+**Split the data into a training set and a test set. Using out-of-state tuition as the response and the other variables as the predictors, perform forward stepwise selection on the training set in order to identify a satisfactory model that uses just a subset of the predictors.**
+
+```{r}
+library(leaps)
+library(ISLR)
+set.seed(702)
+data(College)
+# sampling data into train and test
+
+train <- sample(length(College$Outstate), length(College$Outstate) / 2)
+test <- -train
+College.train <- College[train, ]
+College.test <- College[test, ]
+
+# stepwise selection - forward 
+fit <- regsubsets(Outstate ~ ., data = College.train, nvmax = 17, method = "forward")
+fit.summary <- summary(fit)
+
+# Plot Cp,BIC and adj R2 to estimate the best number of variable 
+par(mfrow = c(1, 3))
+plot(fit.summary$cp, xlab = "Number of variables", ylab = "Cp", type = "l")
+min.cp <- min(fit.summary$cp)
+std.cp <- sd(fit.summary$cp)
+abline(h = min.cp + 0.2 * std.cp, col = "red", lty = 2)
+abline(h = min.cp - 0.2 * std.cp, col = "red", lty = 2)
+abline(v = 8, col = "red", lty = 2)
+plot(fit.summary$bic, xlab = "Number of variables", ylab = "BIC", type='l')
+min.bic <- min(fit.summary$bic)
+std.bic <- sd(fit.summary$bic)
+abline(h = min.bic + 0.2 * std.bic, col = "red", lty = 2)
+abline(h = min.bic - 0.2 * std.bic, col = "red", lty = 2)
+abline(v = 8, col = "red", lty = 2)
+plot(fit.summary$adjr2, xlab = "Number of variables", ylab = "Adjusted R2", type = "l", ylim = c(0.4, 0.84))
+max.adjr2 <- max(fit.summary$adjr2)
+std.adjr2 <- sd(fit.summary$adjr2)
+abline(h = max.adjr2 + 0.2 * std.adjr2, col = "red", lty = 2)
+abline(h = max.adjr2 - 0.2 * std.adjr2, col = "red", lty = 2)
+abline(v = 8, col = "red", lty = 2)
+```
+
+Plot sugessted that subset of 8 variables  is with in 0.2  standard  deviation of  of optimal value of cp,bic and adjuster R-squared.
+Hence we chhoose subset of 8 variables to fit the model 
+ Names of variable of selected subset.
+ 
+```{r}
+## We select number of variable as 8
+fit <- regsubsets(Outstate ~ ., data = College, method = "forward")
+coeffs <- coef(fit, id = 8)
+names(coeffs)
+```
+
+##(b)
+**Fit a GAM on the training data, using out-of-state tuition as the response and the features selected in the previous step as         the predictors. Plot the results, and explain your findings**
+
+```{r, fig.width = 9, fig.height = 9}
+library(gam)
+fit.gam <- gam(Outstate ~ Private + s(Room.Board, df = 2) +s(Personal, df = 4)+ s(PhD, df = 2)+ s(Terminal, df = 3) + s(perc.alumni, df = 2) + s(Expend, df = 5) + s(Grad.Rate, df = 2), data=College.train)
+par(mfrow = c(3, 3))
+plot(fit.gam, se = T, col = "blue")
+```
+
+
+GAM  model used subset of 8 predictors selected by permormimg forward stepwise selection and with specified  degree of freedom.Since privte is qualitative variable, we did not mention any degree of freedom for it in s().In these plots, the function of Room board, PhD, Terminal, Percent Alumni, Grad Rate looks to have positive slope.While personal variable seems to have decreasing trend and expend variable seems to have increasing and then decreasing trend
+
+
+
+##(c)
+**Evaluate the model obtained on the test set, and explain the results obtained.**
+
+```{r}
+preds <- predict(fit.gam, College.test)
+err <- mean((College.test$Outstate - preds)^2)
+err
+tss <- mean((College.test$Outstate - mean(College.test$Outstate))^2)
+rss <- 1 - err / tss
+rss
+```
+
+ MSE=3716430
+ $R^2$ error for test data set is 0.7660947 for GAM model with 8 predictors.
+
+##(d)
+**For which variables, if any, is there evidence of a non-linear relationship with the response?**
+
+```{r}
+summary(fit.gam)
+```
+
+The nonparametric component gam.fit  shows that there is strong non linear relationship of Expend variables with response variable.
+And personal variable also has some non-linear repationship with response but not highly significant.
+  
+#Bonus (1 pt) Question 7.9.11 pg 300 (Not necessary, can do if you want an extra point!)
+
+(11.) In Section 7.7, it was mentioned that GAMs are generally fit using a backfitting approach. The idea behind backfitting is actually quite simple. We will now explore backfitting in the context of multiple linear regression.Suppose that we would like to perform multiple linear regression, but we do not have software to do so. Instead, we only have software to perform simple linear regression. Therefore, we take the following iterative approach: we repeatedly hold all but one coefficient estimate fixed at its current value, and update only that coefficientes timate using a simple linear regression. The process is continued until convergence—that is, until the coefficient estimates stop changing.We now try this out on a toy example.
+
+##a)
+Generate a response Y and two predictors X1 and X2, with n = 100.
+
+I used this equation to generate response Y
+
+```{r, echo=TRUE}
+set.seed(702)
+x1 = rnorm(100)
+x2 = rnorm(100)
+eps = rnorm(100, sd = 0.1)
+y = -.21*x1 + .72*x2 +eps
+y
+```
+
+##(b)
+Initialize $\hat\beta_1$ to take on a value of your choice. It does not matter what value you choose.
+
+Initialize $\hat\beta_1$ = 8
+
+```{r}
+#beta0 = rep(NA, 100)
+#beta1 = rep(8, 100)
+#beta2 = rep(NA, 100)
+#beta1[1] = 10
+beta1=8
+```
+
+##(c)
+Keeping $\beta_1$ fixed, fit the model
+
+y-beta1 x1= beta0  +beta2 x2+esp
+
+You can do this as follows:
+ 
+```{r}
+a=y-beta1 *x1
+beta2=lm(a~x2)$coef [2]
+beta2
+```
+ 
+##(d)
+Keeping $\beta_2$ fixed, fit the model
+y-beta2 x2= beta0  +beta1 x1+esp
+
+You can do this as follows:
+
+```{r}
+a=y-beta2 *x2
+beta1=lm(a~x1)$coef [2]
+beta1
+```
+
+
+
+(e) Write a for loop to repeat (c) and (d) 1,000 times. Report the estimates of beta0,beta1 and beta2 at each iteration of the for loop.Create a plot in which each of these values is displayed, with beta0,beta1 and beta2 each shown in a different color.
+
+```{r}
+beta0 = rep(NA, 1000)
+beta1 = rep(NA, 1000)
+beta2 = rep(NA, 1000)
+beta1[1] = 8
+for (i in 1:1000) {
+    a = y - beta1[i] * x1
+    beta2[i] = lm(a ~ x2)$coef[2]
+    a = y - beta2[i] * x2
+    lm.fit = lm(a ~ x1)
+    if (i < 1000) {
+        beta1[i + 1] = lm.fit$coef[2]
+    }
+    beta0[i] = lm.fit$coef[1]
+}
+```
+
+Estimates of beta0,
+
+```{r}
+head(beta0,18)
+```
+
+Estimates of beta1
+
+```{r}
+head(beta1,22)
+```
+
+Estimates of beta2
+
+```{r}
+head(beta2,23)
+```
+
+
+Plot 
+
+```{r}
+plot(1:1000, beta0, type = "l", xlab = "iteration", ylab = "betas", ylim = c(-2, 
+    8), col = "green")
+lines(1:1000, beta1, col = "black")
+lines(1:1000, beta2, col = "blue")
+legend("top", c("beta0", "beta1", "beta2"), lty = 1, col = c("green", "black", 
+    "blue"))
+```
+
+##(f)
+Compare your answer in (e) to the results of simply performing multiple linear regression to predict Y using X1 and X2. Use the abline() function to overlay those multiple linear regression coefficient estimates on the plot obtained in (e).
+
+```{r}
+lm.fit = lm(y ~ x1 + x2)
+plot(1:1000, beta0, type = "l", xlab = "iteration", ylab = "betas", ylim = c(-2.2, 
+    8), col = "green")
+lines(1:1000, beta1, col = "black")
+lines(1:1000, beta2, col = "blue")
+abline(h = lm.fit$coef[1], lty = "dashed", lwd = 3, col = rgb(0, 0, 0, alpha = 0.4))
+abline(h = lm.fit$coef[2], lty = "dashed", lwd = 3, col = rgb(0, 0, 0, alpha = 0.4))
+abline(h = lm.fit$coef[3], lty = "dashed", lwd = 3, col = rgb(0, 0, 0, alpha = 0.4))
+legend("top", c("beta0", "beta1", "beta2", "multiple regression"), lty = c(1, 
+    1, 1, 2), col = c("green", "black", "blue", "red"))
+```
+
+Plot shows that coefficents obtaind from backfitting and coefeicents obtained from multiple linear regression are ovelaping to 
+each other.Thats means, both the models predicted exaxtly same coefficents.
+
+##(g)
+
+**On this data set, how many backfitting iterations were required in order to obtain a “good” approximation to the multiple regression coefficient estimates?**
+
+**Ans**
+As per the definition of backfitting , Iteration  process is continued until convergence—that is, until the coefficient estimates 
+stop changing.Plot of betas shows predected coefficent are almost constant for all iteration but by looking at the estimated value of betas , beta0 ,beta1 and beta2 stop changing after 5 , 5  and 4 iterations  respectievly. Hence, we requred to have 5 backfitting iteration to obtain a good appproximation to multiple regression.
+
+
+
+
+

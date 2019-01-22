@@ -1,0 +1,358 @@
+---
+title: "chp3-Linear Rigression"
+author: "Prakash Paudyal"
+date: "December 10, 2017"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+# Due January 23rd
+
+
+Answer all questions specified on the problem but if you see something interesting and want to do more analysis please report it as well. Don't forget to include discussion.
+
+Submit your \textbf{.rmd} file with the knitted \textbf{PDF} (or knitted Word Document saved as a PDF). If you are still having trouble with .rmd, let us know and we will help you, but both the .rmd and the PDF are required.
+
+This file can be used as a skeleton document for your code/write up. Please follow the instructions found under Content titled Format+STAT-702+HW. 
+
+For any question asking for plots/graphs, please do as the question asks as well as do the same but using the respective commands in the GGPLOT2 library. (So if the question asks for one plot, your results should have two plots. One produced using the given R-function and one produced from the GGPLOT2 equivalent)
+
+You do not need to include the above statements.
+
+Please do the following problems from the text book ISLR.
+
+$$1. Question 3.7.5 pg 121$$
+ANS: 
+
+We are given that 
+$$\hat{y}_i = x_i\hat{\beta}$$
+and 
+$$\hat{\beta}=\frac{\sum_{i=1}^nx_iy_i}{\sum_{i^\prime=1}^nx_{i^\prime}^2}$$
+Substituting the value of  $$\hat{\beta}$$ in $$\hat{y}_i = x_i\hat{\beta}$$, we get, 
+
+$$\hat{y}_i=x_i\frac{\sum_{i^\prime=1}^nx_{i^\prime}y_{i^\prime}}{\sum_{k=1}^nx_{k}^2}=\sum_{i^\prime=1}^n\frac{x_ix_{i^\prime}}{\sum_{k=1}^nx_{k}^2}y_{i^\prime}=\sum_{i^\prime=1}^na_{i^\prime}y_{i^\prime}$$
+
+
+
+
+$$2. Question 3.7.10 pg 123 $$
+10. This question should be answered using the Carseats data set.
+(a) Fit a multiple regression model to predict Sales using Price,Urban, and US.
+(b) Provide an interpretation of each coefficient in the model. Be careful-some of the variables in the model are qualitative!
+(c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+(d) For which of the predictors can you reject the null hypothesis H0 : ??j = 0?
+(e) On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
+(f) How well do the models in (a) and (e) fit the data?
+(g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
+(h) Is there evidence of outliers or high leverage observations in the model from (e)?
+
+```{r,include=FALSE,warning=F,message=F}
+library(ISLR)
+data(Carseats)
+attach(Carseats)
+names(Carseats)
+
+```
+#a
+(a) Fit a multiple regression model to predict Sales using Price,Urban, and US.
+
+```{r}
+lm.fit=lm(Sales~Price+Urban+US,data=Carseats)
+summary(lm.fit)
+```
+#b
+(b) Provide an interpretation of each coefficient in the model. Be careful-some of the variables in the model are qualitative!
+
+Ans:
+The coefficent of price suggest that as price increases the sales decrease since it has negative coefficent value.Price variable has significant relationship with sales since it has less p-value.
+The coefficent of Urban variable  suggest that sales decreaes  when the stores are in urban area.
+The coefficent of US suggest that sales increaes when stores are  in the US. 
+
+#c
+(c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+
+The  Model Equation is 
+
+$$ Sales=13.043469+(-0.054459)Price  +(-0.021916)UrbanYes +(1.200573) USYes$$
+#d
+(d) For which of the predictors can you reject the null hypothesis H0 : ??j = 0?
+
+Ans: we can reject null hypothesiss for the Price and US variables. Null hypothesis is rejected due to their small p-value
+
+#e 
+(e) On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which    there is evidence of association with the outcome.
+```{r}
+lm.fitd<-lm(Sales~Price +US)
+summary(lm.fitd)
+```
+
+#f
+(f) How well do the models in (a) and (e) fit the data?
+
+```{r}
+anova(lm.fit ,lm.fitd)
+```
+
+Here R-squared and RSE for both models are similar. Anova test also suggest that F-statistic is 0.0065 and it's P-value near to 1 hence the both model fit similarly with the data.Model in (e) fit slightly better.
+Both the model has less R-squared erro which is not good for any model to fit data.
+
+#g
+(g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
+```{r}
+confint(lm.fitd)
+
+```
+
+#h
+(h) Is there evidence of outliers or high leverage observations in the model from (e)?
+
+```{r}
+par(mfrow = c(2, 2))
+plot(lm.fitd)
+which.max (hatvalues (lm.fit))
+
+```
+
+In the Resudals vs Leverage plot , there are few obserbations are outliers and there are some leverage points because some the points exceed the 0.01.
+
+$$3. Question 3.7.15 pg  126 $$
+15. This problem involves the Boston data set, which we saw in the lab for this chapter. We will now try to predict per capita crime rate using the other variables in this data set. In other words, per capita crime rate is the response,
+and the other variables are the predictors.
+(a) For each predictor, fit a simple linear regression model to predict the response. Describe your results. In which 
+of the models is there a statistically significant association between the predictor and the response? Create some 
+plots to back up your assertions.
+(b) Fit a multiple regression model to predict the response using all of the predictors. Describe your results. 
+For which predictors can we reject the null hypothesis H0 : ??j = 0?
+(c) How do your results from (a) compare to your results from (b)?Create a plot displaying the univariate regression coefficients from (a) on the x-axis, and the multiple regression coefficients from (b) on the y-axis. That is, each predictor is displayed as a single point in the plot. Its coefficient in a simple linear regression
+model is shown on the x-axis, and its coefficient estimate in the multiple linear regression model is shown on the y-axis.
+(d) Is there evidence of non-linear association between any of the
+predictors and the response? To answer this question, for each
+predictor X, fit a model of the form
+Y = ??0 + ??1X + ??2X2 + ??3X3 + E.
+
+#a
+(a) For each predictor, fit a simple linear regression model to predict the response. Describe your results. In which 
+of the models is there a statistically significant association between the predictor and the response? Create some 
+plots to back up your assertions.
+
+```{r,include=FALSE,warning=F,message=F}
+#library(MASS)
+data(Boston, package = "MASS")
+attach(Boston)
+chas<-as.factor(chas)
+#head(Boston)
+#summary(Boston)
+```
+
+```{r}
+fit1<-lm(crim~zn,data = Boston)
+summary(fit1)
+#plot(crim~zn)
+#abline(fit1)
+par(mfrow=c(2,2))
+plot(fit1)
+```
+
+```{r}
+fit2<-lm(crim~indus,data = Boston)
+summary(fit2)
+par(mfrow=c(2,2))
+plot(fit2)
+```
+```{r}
+fit3<-lm(crim~chas,data = Boston)
+summary(fit3)
+par(mfrow=c(2,2))
+plot(fit3)
+```
+
+```{r}
+fit4<-lm(crim~nox,data = Boston)
+summary(fit4)
+par(mfrow=c(2,2))
+plot(fit4)
+```
+
+```{r}
+fit5<-lm(crim~rm,data = Boston)
+summary(fit5)
+par(mfrow=c(2,2))
+plot(fit5)
+```
+
+```{r}
+fit6<-lm(crim~age,data = Boston)
+summary(fit6)
+par(mfrow=c(2,2))
+plot(fit6)
+```
+
+```{r}
+fit7<-lm(crim~dis,data = Boston)
+summary(fit7)
+par(mfrow=c(2,2))
+plot(fit7)
+
+```
+
+```{r}
+fit8<-lm(crim~rad,data = Boston)
+summary(fit8)
+par(mfrow=c(2,2))
+plot(fit8)
+```
+
+```{r}
+fit9<-lm(crim~tax,data = Boston)
+summary(fit9)
+par(mfrow=c(2,2))
+plot(fit9)
+```
+
+```{r}
+fit10<-lm(crim~ptratio,data = Boston)
+summary(fit10)
+par(mfrow=c(2,2))
+plot(fit10)
+```
+
+```{r}
+fit11<-lm(crim~black,data = Boston)
+summary(fit11)
+par(mfrow=c(2,2))
+plot(fit11)
+
+```
+
+```{r}
+fit12<-lm(crim~lstat,data = Boston)
+summary(fit12)
+par(mfrow=c(2,2))
+plot(fit12)
+```
+
+```{r}
+fit13<-lm(crim~medv,data = Boston)
+summary(fit13)
+par(mfrow=c(2,2))
+plot(fit13)
+
+```
+ 
+ All the variables reject null hypothesis ecxcept chas and have significant p-value which is less than 0.05.
+ Hence all variable except chas has significant relationship with response variable crim.
+ 
+ 
+ 
+#b
+(b) Fit a multiple regression model to predict the response using all of the predictors. Describe your results. 
+For which predictors can we reject the null hypothesis H0 : ??j = 0?
+
+
+```{r}
+fit.mul<-lm(crim~., data = Boston)
+summary(fit.mul)
+```
+ We can reject the NULL hypothesis H0 : ??j = 0 for variables zn, dis, rad, black and medv
+ 
+#c
+(c) How do your results from (a) compare to your results from (b)?Create a plot displaying the univariate regression coefficients from (a) on the x-axis, and the multiple regression coefficients from (b) on the y-axis. That is, each predictor is displayed as a single point in the plot. Its coefficient in a simple linear regression
+model is shown on the x-axis, and its coefficient estimate in the multiple linear regression model is shown on the y-axis.
+
+```{r}
+x<-c(coefficients(fit1)[2],coefficients(fit2)[2],coefficients(fit3)[2],coefficients(fit4)[2],coefficients(fit5)[2],
+     coefficients(fit6)[2],coefficients(fit7)[2],coefficients(fit8)[2],coefficients(fit9)[2],coefficients(fit10)[2],
+     coefficients(fit11)[2],coefficients(fit12)[2],coefficients(fit13)[2])
+y<-coefficients(fit.mul)[2:14]
+plot(x,y)
+```
+
+There is difference between simple and multiple regression coefficents.One of the variable nox has coefficent value
+31.249 in  simple regression and 10 in multiple regression .By observing above plot shows that coefficent value are higher
+in simple regression than multiple regression.
+
+#ggplot
+
+```{r, warning=F,message=F}
+library(ggplot2)
+dat.gg<-data.frame(x,y)
+attach(dat.gg)
+ggplot(dat.gg, aes(x=x, y=y)) + geom_point(col="green")+ggtitle("simple vs Multiple regression (ggplot)")
+
+
+```
+
+#d
+(d) Is there evidence of non-linear association between any of the predictors and the response? To answer this question, for each predictor X, fit a model of the form Y = ??0 + ??1X+??2X2+??3X3 + E.
+
+```{r}
+fit.zn<-lm(crim~poly(zn,3))
+summary(fit.zn)
+```
+
+```{r}
+fit.zn<-lm(crim~poly(zn,3))
+summary(fit.zn)
+```
+```{r}
+fit.indus<-lm(crim~poly(indus,3))
+summary(fit.indus)
+```
+```{r}
+#fit.chas<-lm(crim~poly(chas,3))
+#summary(fit.chas)
+```
+```{r}
+fit.nox<-lm(crim~poly(nox,3))
+summary(fit.nox)
+```
+
+```{r}
+fit.rm<-lm(crim~poly(rm,3))
+summary(fit.rm)
+```
+```{r}
+fit.age<-lm(crim~poly(age,3))
+summary(fit.age)
+
+```
+```{r}
+fit.dis<-lm(crim~poly(dis,3))
+summary(fit.dis)
+```
+```{r}
+fit.rad<-lm(crim~poly(rad,3))
+summary(fit.rad)
+```
+
+```{r}
+fit.tax<-lm(crim~poly(tax,3))
+summary(fit.tax)
+
+```
+```{r}
+fit.ptratio<-lm(crim~poly(ptratio,3))
+summary(fit.ptratio)
+```
+```{r}
+fit.black<-lm(crim~poly(black,3))
+summary(fit.black)
+```
+```{r}
+fit.lstat<-lm(crim~poly(lstat,3))
+summary(fit.lstat)
+```
+```{r}
+fit.medv<-lm(crim~poly(medv,3))
+summary(fit.medv)
+```
+
+For predictors   "indus", "nox", "age", "dis", "ptratio" and "medv", p-values suggest that these variable's coefficent are cubic fit.
+For predictors  "zn", "rm", "rad", "tax" and "lstat", P-values suggest that these variables are fit up to 2nd order ploynominal.
+For predictor black , p-valus suggest that it is significant up to 1st order
+Hence there is non-linear association between allof the predictors and the response except black? 
+

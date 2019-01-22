@@ -1,0 +1,357 @@
+---
+title: "chp5.1-Resampling"
+author: "Prakash Paudyal"
+date: "December 10, 2017"
+output:
+  word_document: default
+  pdf_document: default
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+
+Please do the following problems from the text book ISLR.
+
+$$1.**Question 5.4.3 pg 198**$$
+  3. We now review k-fold cross-validation.
+(a) Explain how k-fold cross-validation is implemented.
+
+**Ans:** 
+In k-fold cross-validation, the data is randomly divided into K equal parts(k-folds). One of its part is used as validation data for testing the model and other k-1 parts of data are used as training data to fit the model. Then the MSE is calculated for held out data. Then this process is repeated for k times, each time, different parts of data is used as validation set. The test error is the estimated   by averaging k numbers of MSE's. In this method all the data observations are used as both training and test set.
+ 
+
+
+  $$CV_(k) =\frac{1}{k}  \sum_{i=1}^{k} MSE_i$$
+
+
+(b) What are the advantages and disadvantages of k-fold crossvalidation
+relative to:
+i. The validation set approach?
+**Advantages:**
+.k-fold CV test error  rate can be less variable than the validation set approach ,since training set contains more observations.
+.k-fold CV  has more accuracy on estimates of the test error.
+**Disadvantage:** 
+.k-fold CV need more computatioanl cost and is complex to implement than validation set approach
+
+ii. LOOCV?
+
+**Advantages:**
+
+.If n is large, k-folds cross validation with k less than n provides a much more cost-effective and computationally efficient estimate. 
+.k-fold cross validation with k less than n often gives more accurate estimates of the test error rate than does LOOCV.
+.k-fold cross validation with k less than n  has also lower vriance than LOOCV.
+
+**Disadvantage:** 
+k-fold cross validation with k less than n   may give  biased estimates of test error compared to the LOOCV cross-validation approach which gives approximately unbiased estimates of the test error, since each training set contains n-1 observations.
+
+$$2. Question 5.4.5 pg 198 (use set.seed(702) to make results replicable)$$
+5. In Chapter 4, we used logistic regression to predict the probability of default using income and balance
+on the Default data set. We will now estimate the test error of this logistic regression model using the
+validation set approach. Do not forget to set a random seed before beginning your analysis. 
+
+(a) Fit a logistic regression model that uses income and balance to predict default.
+
+```{r}
+library(ISLR)
+data("Default")
+set.seed(101)
+# glm model 
+glm.model <- glm(default ~ income+balance , data = Default, family = "binomial")
+summary(glm.model)
+```
+
+(b) Using the validation set approach, estimate the test error of this model. In order to do this, you must perform the following steps:
+
+i. Split the sample set into a training set and a validation set.
+
+```{r,echo=TRUE}
+## 50% of the sample size
+smp_size <- floor(0.50 * nrow(Default))
+## set the seed to make partition reproductible
+set.seed(702)
+#train_ind1<- sample(dim(Default)[1], dim(Default)[1] / 2)
+train_ind <- sample(seq_len(nrow(Default)), size = smp_size)
+
+train <- Default[train_ind, ]
+test <- Default[-train_ind, ]
+```
+
+
+
+ii. Fit a multiple logistic regression model using only the training observations.
+
+```{r}
+train.glm <- glm(default ~ income + balance, data = Default, family = "binomial", subset = train_ind  )
+summary(train.glm)
+```
+
+iii. Obtain a prediction of default status for each individual in the validation set by computing the posterior probability of default for that individual, and classifying the individual to the default category if the posterior probability is greater than 0.5.
+
+```{r,echo=TRUE}
+## iii
+probs <- predict(train.glm, newdata = test, type = "response")
+pred.glm <- rep("No", length(probs))
+pred.glm[probs > 0.5] <- "Yes"
+```
+
+iv. Compute the validation set error, which is the fraction of the observations in the validation set that are misclassified.
+
+```{r}
+mean(pred.glm != test$default)
+```
+**Disucssion:**
+2.74% of validation sets were misclassified.
+
+(c) Repeat the process in (b) three times, using three different splits of the observations into a training set and a validation set. Comment on the results obtained.
+
+## 60% of the sample size
+
+```{r}
+set.seed(15)
+## 60% of the sample size
+smp_size <- floor(0.60 * nrow(Default))
+train_ind <- sample(seq_len(nrow(Default)), size = smp_size)
+test <- Default[-train_ind, ]
+train.glm <- glm(default ~ income + balance, data = Default, family = "binomial", subset = train_ind)
+summary(train.glm)
+probs <- predict(train.glm, newdata = test, type = "response")
+pred.glm <- rep("No", length(probs))
+pred.glm[probs > 0.5] <- "Yes"
+model1<-mean(pred.glm != test$default)
+
+```
+
+## 70% of the sample size
+
+```{r}
+set.seed(18)
+
+## 70% of the sample size
+smp_size <- floor(0.70 * nrow(Default))
+train_ind <- sample(seq_len(nrow(Default)), size = smp_size)
+test <- Default[-train_ind, ]
+train.glm <- glm(default ~ income + balance, data = Default, family = "binomial", subset = train_ind)
+summary(train.glm)
+probs <- predict(train.glm, newdata = test, type = "response")
+pred.glm <- rep("No", length(probs))
+pred.glm[probs > 0.5] <- "Yes"
+model2<-mean(pred.glm != test$default)
+```
+
+## 80% of the sample size
+
+```{r}
+set.seed(20)
+
+## 80% of the sample size
+smp_size <- floor(0.80 * nrow(Default))
+train_ind <- sample(seq_len(nrow(Default)), size = smp_size)
+test <- Default[-train_ind, ]
+train.glm <- glm(default ~ income + balance, data = Default, family = "binomial", subset = train_ind)
+summary(train.glm)
+probs <- predict(train.glm, newdata = test, type = "response")
+pred.glm <- rep("No", length(probs))
+pred.glm[probs > 0.5] <- "Yes"
+model3<-mean(pred.glm != test$default)
+```
+```{r}
+library(knitr)
+Models<-c("Model_1","Model_2","Model_3")
+ErrorRate<-c(model1,model2,model3)
+sampleSize<-c("60%","70%","80%")
+z<-data.frame(Models,sampleSize,ErrorRate)
+kable(z,digits = 4)
+```
+
+*Discussion:*
+I used 60%,70% and 80% sample size of observations of data to train models.The validation estimate of the test error rates are  varied, depending on precisely which observations are included in the training set and which observations are included in the validation set.
+
+
+(d) Now consider a logistic regression model that predicts the probability of default using income, balance, and a dummy variable for student. Estimate the test error for this model using the validation set approach. Comment on whether or not including a dummy variable for student leads to a reduction in the test error rate.
+
+```{r}
+set.seed(20)
+
+## 80% of the sample size
+smp_size <- floor(0.80 * nrow(Default))
+train_ind <- sample(seq_len(nrow(Default)), size = smp_size)
+test <- Default[-train_ind, ]
+train.glm <- glm(default ~ income + balance + student, data = Default, family = "binomial", subset = train_ind)
+summary(train.glm)
+probs <- predict(train.glm, newdata = test, type = "response")
+pred.glm <- rep("No", length(probs))
+pred.glm[probs > 0.5] <- "Yes"
+mean(pred.glm != test$default)
+```
+
+**Discussion**
+I used 80% sample of data to train model as in Q2.c.Both models produces same validation test error=0.0275.
+Hence we can say hat adding student as predictor in model does't help model to reduce the error.
+
+$$3. Question 5.4.7 pg 200 $$
+7. In Sections 5.3.2 and 5.3.3, we saw that the cv.glm() function can be used in order to compute the LOOCV test error estimate. Alternatively,one could compute those quantities using just the glm() and predict.glm() functions, and a for loop. You will now take this approach in order to compute the LOOCV error for a simple logistic
+regression model on the Weekly data set. Recall that in the context of classification problems, the LOOCV error is given in (5.4). 
+(a) Fit a logistic regressionmodel that predicts Direction using Lag1 and Lag2.
+
+```{r}
+data("Weekly")
+weekly.glm <- glm(Direction ~ Lag1 + Lag2, data = Weekly, family = "binomial" )
+summary(weekly.glm)
+```
+(b) Fit a logistic regressionmodel that predicts Direction using Lag1 and Lag2 using all but the first observation.
+
+```{r}
+weekly.glm.1 <- glm(Direction ~ Lag1 + Lag2, data = Weekly[-1, ], family = "binomial")
+summary(weekly.glm.1)
+```
+
+(c) Use the model from (b) to predict the direction of the first observation. You can do this by predicting that the first observation will go up if P(Direction="Up"|Lag1, Lag2) > 0.5. Was this observation
+correctly classified?
+
+```{r}
+predict.glm(weekly.glm.1, Weekly[1, ], type = "response") > 0.5
+
+```
+
+(d) Write a for loop from i = 1 to i = n, where n is the number of observations in the data set, that performs each of the following steps:
+i. Fit a logistic regression model using all but the ith observation to predict Direction using Lag1 and Lag2.
+ii. Compute the posterior probability of the market moving up for the ith observation.
+iii. Use the posterior probability for the ith observation in order to predict whether or not the market moves up.
+iv. Determine whether or not an error was made in predicting the direction for the ith observation. If an error was made,then indicate this as a 1, and otherwise indicate it as a 0.
+
+```{r,echo=TRUE}
+error <- rep(0, dim(Weekly)[1])
+for (i in 1:dim(Weekly)[1]) {
+  fit.glm <- glm(Direction ~ Lag1 + Lag2, data = Weekly[-i, ],  family = "binomial")
+  pred.up <- predict.glm(fit.glm, Weekly[i, ], type = "response") > 0.5
+  true.up <- Weekly[i, ]$Direction == "Up"
+  if (pred.up != true.up)
+    error[i] <- 1
+}
+error
+```
+
+(e) Take the average of the n numbers obtained in (d)iv in order to obtain the LOOCV estimate for the test error. Comment on the results.
+
+```{r}
+mean(error)
+```
+  
+4. Write your own code (similar to Q \#3. above) to estimate test error using 6-fold cross validation for fitting linear regression with \textit{mpg $\sim$ horsepower + $horsepower^2$} from the Auto data in the ISLR library.
+
+
+
+Here I implmented this equation  $CV_(k) =\frac{1}{k}  \sum_{i=1}^{k} MSE_i$ for cross validation.I have splited data into 6 equal parts with out replacement.
+
+
+```{r,include=TRUE,warning=FALSE,message=TRUE,echo=TRUE}
+library(knitr)
+library(plyr)
+library(ISLR)
+data(Auto)
+#Auto$mpg01 <- ifelse(Auto$mpg>median(Auto$mpg),1,0)
+attach(Auto)
+set.seed(1272)
+folds <- split(Auto, cut(sample(1:nrow(Auto),replace = FALSE),6))
+errs <- rep(NA, length(folds))
+for (i in 1:length(folds)) {
+ test <- ldply(folds[i], data.frame)
+ train <- ldply(folds[-i], data.frame)
+ lm_train <- lm(mpg ~ horsepower + I(horsepower^2), data = train)
+  errs [i]<- mean((test$mpg - predict(lm_train,test))^2)
+  }
+fold<-c("fold1","fold2","fold3","fold4","fold5","fold6")
+MSES<-c("MSE1","MSE2","MSE3","MSE4","MSE5","MSE6")
+d<-data.frame(fold,MSES, MSE=errs)
+kable(d)
+mean(errs)
+
+```
+
+
+
+5. Last homework you started analyzing the dataset you chose from [this website](https://archive.ics.uci.edu/ml/datasets.html). Now continue the analysis and perform Logistic Regression, KNN, LDA, QDA, MclustDA, MclustDA with EDDA if appropriate. If it is not possible to perform any of the methods mentioned above please justify why.
+
+**Discussion**
+I  have chossen the adult income which has 32561 observations and 15 variables .I tried to predict the income
+of the person according to differet predictors liks age","workclass","fnlwgt","education","education-num", "marital-status","occupation","relationship","race","sex","capitalgain","capitalloss","hoursperweek",
+"nativecountry","income"
+since data observation was big, I subseted data for the age greater than 30 to estimate either his or her income comes under 50k are above  50k. For this I chose some of the variables I thought they are good  predictor for income.
+I fit the model for glm, qda and knn=1 but  I  could not  fit   qda and MclustDA. I could not figure it out  this time why I was not able to fit some models. I found this  problem was intresting to work on raw data,I will continue the work on this problem.If I found somethig , I will report you.
+
+```{r}
+library(knitr)
+## 80% of the sample size
+adult=read.csv("adult.data.csv", header = F)
+names(adult)<-c("age","workclass","fnlwgt","education","education-num", "marital-status","occupation","relationship","race", "sex","capitalgain","capitalloss","hoursperweek","nativecountry","income")
+adult1 <- subset(adult, age > 30, select = c(age, education,occupation,hoursperweek,sex,income ))
+adult1$income1 <- ifelse(adult1$income==" <=50K", 0,1)
+#Auto$mpg01 <- ifelse(Auto$mpg>median(Auto$mpg),1,0)
+adult1$income1<-factor(adult1$income1)
+attach(adult1)
+smp_size <- floor(0.80 * nrow(adult1))
+## set the seed to make partition reproductible
+set.seed(7029)
+#train_ind1<- sample(dim(Default)[1], dim(Default)[1] / 2)
+train_ind <- sample(seq_len(nrow(adult1)), size = smp_size)
+
+train <- adult1[train_ind, ]
+test <- adult1[-train_ind, ]
+kable(head(adult1))
+```
+
+#5.GLM
+```{r}
+ glm.Train <- glm(income1~age+education+occupation+hoursperweek , data=train, family="binomial")
+summary(glm.Train)
+ prob <- predict(glm.Train,test,type = "response")
+# Turn probabilities into classes and look at their frequencies
+ p_class1 <- ifelse(prob > .50, 1, 0) 
+#gt<-table(p_class1, test$V15)
+glmerror<-mean(p_class1!= test$income1)
+glmerror
+```
+#5.knn
+```{r}
+library(class)
+train.X1 = cbind(income1, age , education , occupation,hoursperweek)[ train_ind, ]
+test.X1 = cbind(income1, age , education , occupation,hoursperweek)[ -train_ind, ]
+
+train.income1 = income1[train_ind]
+set.seed(1)
+knn.pred = knn(train.X1, test.X1, train.income1, k = 1)
+table(knn.pred, test$income1)
+knnerror<-mean(knn.pred != test$income1)
+knnerror
+```
+
+
+
+
+#5.lda
+```{r}
+library(MASS)
+
+lda.fit = lda(income1 ~ age+education+occupation+hoursperweek , data=train)
+summary(lda.fit)
+lda.pred = predict(lda.fit, test)
+ldaerror<-mean(lda.pred$class == test$income1)
+ldaerror
+```
+
+
+
+#5errorrate
+```{r}
+library(knitr)
+x1<-data.frame(glmerror,ldaerror, knnerror)
+kable(x1)
+
+```
+
+**KNN provides less test error compared to other models to predict the income class.**
